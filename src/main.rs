@@ -3,8 +3,25 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 
+#[derive(Debug, Clone)]
+enum ParseError {
+    UnknownUser(String),
+}
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseError::UnknownUser(user) => {
+                write!(f, "Unknown user: {}", user)
+            }
+        }
+    }
+}
+
+impl Error for ParseError {}
+
 #[derive(Debug, Copy, Clone)]
-struct People(u32);
+struct People(usize);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Purchase {
@@ -20,11 +37,46 @@ struct SerializedAccounts {
     purchases: Vec<Purchase>,
 }
 
+impl SerializedAccounts {
+    fn parse(self) -> Result<ParsedAccounts, Box<dyn Error>> {
+        let mut users = self.users;
+        users.sort();
+        users.dedup();
+        let mut purchases = Vec::with_capacity(self.purchases.len());
+        for purchase in self.purchases {
+            let user_id = users
+                .binary_search(&purchase.who)
+                .or(Err(ParseError::UnknownUser(purchase.who)))?;
+            let amount = rational_from_str(&purchase.amount)?;
+            let mut benef_to_shares = vec![Rational64::new(0, 1); users.len()];
+            for (benef_id, benef) in users.iter().enumerate() {
+                if let Some(shares) = purchase.benef_to_shares.get(benef) {
+                    benef_to_shares[benef_id] = rational_from_str(shares)?;
+                }
+            }
+            purchases.push(ParsedPurchase {
+                descr: purchase.descr,
+                who_paid: People(user_id),
+                amount,
+                benef_to_shares,
+            });
+        }
+        Ok(ParsedAccounts { users, purchases })
+    }
+}
+
+#[derive(Debug)]
 struct ParsedPurchase {
     descr: String,
     who_paid: People,
     amount: Rational64,
     benef_to_shares: Vec<Rational64>,
+}
+
+#[derive(Debug)]
+struct ParsedAccounts {
+    users: Vec<String>,
+    purchases: Vec<ParsedPurchase>,
 }
 
 fn rational_from_str(rat_str: &str) -> Result<Rational64, Box<dyn Error>> {
@@ -83,6 +135,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let accounts_path = "./input.yml";
     let mut accounts_file = std::fs::File::open(&accounts_path)?;
     let accounts: SerializedAccounts = serde_yaml::from_reader(accounts_file)?;
+    dbg!(&accounts);
+    let accounts = accounts.parse();
     dbg!(accounts);
 
     let accounts = SerializedAccounts {
