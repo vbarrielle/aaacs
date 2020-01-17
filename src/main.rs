@@ -35,7 +35,7 @@ struct SerializedAccounts {
 }
 
 impl SerializedAccounts {
-    fn parse(self) -> Result<ParsedAccounts, Box<dyn Error>> {
+    pub fn parse(self) -> Result<ParsedAccounts, Box<dyn Error>> {
         let mut users = self.users;
         users.sort();
         users.dedup();
@@ -99,6 +99,17 @@ impl ParsedAccounts {
         }
         balances
     }
+
+    pub fn print_balances(&self, nb_max_decimals: u8) {
+        let balances = self.user_balances();
+        for (user, balance) in self.users.iter().zip(&balances) {
+            println!(
+                "{} has a balance of: {}",
+                user,
+                rational_to_string(*balance, nb_max_decimals),
+            );
+        }
+    }
 }
 
 fn rational_from_str(rat_str: &str) -> Result<Rational64, Box<dyn Error>> {
@@ -161,6 +172,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let accounts = accounts.parse()?;
     dbg!(&accounts);
     dbg!(accounts.user_balances());
+    accounts.print_balances(2);
 
     let accounts = SerializedAccounts {
         users: vec![
