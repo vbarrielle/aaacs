@@ -1,20 +1,53 @@
 use std::error::Error;
+use std::num::ParseIntError;
 
 use num_rational::Rational64;
+
+#[derive(Debug, Clone)]
+pub enum ParseRationalError {
+    NumerError(ParseIntError),
+    DenomError(ParseIntError),
+    EmptyString,
+}
+
+impl std::fmt::Display for ParseRationalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseRationalError::NumerError(error) => {
+                write!(f, "Error parsing numerator: {}.", error)
+            }
+            ParseRationalError::DenomError(error) => {
+                write!(f, "Error parsing denominator: {}.", error)
+            }
+            ParseRationalError::EmptyString => {
+                write!(f, "Could not parse empty string as a rational.")
+            }
+        }
+    }
+}
+
+impl Error for ParseRationalError {}
 
 /// Deserialize a rational number from its string representation
 ///
 /// The string representation of a rational is `<integral_part>.<decimal_part>`
-pub fn rational_from_str(rat_str: &str) -> Result<Rational64, Box<dyn Error>> {
-    let mut parts_iter = rat_str.split('.');
-    let integral_part = parts_iter.next().ok_or("Empty string")?;
-    let integral_part: i64 = integral_part.parse()?;
+pub fn rational_from_str(
+    rat_str: &str,
+) -> Result<Rational64, ParseRationalError> {
+    let mut parts_iter = rat_str.trim().split('.');
+    let integral_part =
+        parts_iter.next().ok_or(ParseRationalError::EmptyString)?;
+    let integral_part: i64 = integral_part
+        .parse()
+        .map_err(|e| ParseRationalError::NumerError(e))?;
     let integral_part = Rational64::new(integral_part, 1);
     if let Some(decimal_part) = parts_iter.next() {
         let nb_decimals = decimal_part.len();
         Ok(integral_part
             + Rational64::new(
-                decimal_part.parse()?,
+                decimal_part
+                    .parse()
+                    .map_err(|e| ParseRationalError::DenomError(e))?,
                 10_i64.pow(nb_decimals as u32),
             ))
     } else {

@@ -3,11 +3,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 
+use comptes_vl::rational::ParseRationalError;
 use comptes_vl::rational::{rational_from_str, rational_to_string};
 
 #[derive(Debug, Clone)]
 enum ParseError {
     UnknownUser(String),
+    RationalParsingFailed(ParseRationalError),
 }
 
 impl std::fmt::Display for ParseError {
@@ -15,6 +17,9 @@ impl std::fmt::Display for ParseError {
         match self {
             ParseError::UnknownUser(user) => {
                 write!(f, "Unknown user: {}", user)
+            }
+            ParseError::RationalParsingFailed(error) => {
+                write!(f, "Could not parse rational: {}.", error)
             }
         }
     }
@@ -37,7 +42,7 @@ struct SerializedAccounts {
 }
 
 impl SerializedAccounts {
-    pub fn parse(self) -> Result<ParsedAccounts, Box<dyn Error>> {
+    pub fn parse(self) -> Result<ParsedAccounts, ParseError> {
         let mut users = self.users;
         users.sort();
         users.dedup();
@@ -46,11 +51,13 @@ impl SerializedAccounts {
             let user_id = users
                 .binary_search(&purchase.who)
                 .or(Err(ParseError::UnknownUser(purchase.who)))?;
-            let amount = rational_from_str(&purchase.amount)?;
+            let amount = rational_from_str(&purchase.amount)
+                .map_err(|e| ParseError::RationalParsingFailed(e))?;
             let mut benef_to_shares = vec![Rational64::new(0, 1); users.len()];
             for (benef_id, benef) in users.iter().enumerate() {
                 if let Some(shares) = purchase.benef_to_shares.get(benef) {
-                    benef_to_shares[benef_id] = rational_from_str(shares)?;
+                    benef_to_shares[benef_id] = rational_from_str(shares)
+                        .map_err(|e| ParseError::RationalParsingFailed(e))?;
                 }
             }
             purchases.push(ParsedPurchase {
