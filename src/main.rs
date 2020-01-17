@@ -20,9 +20,6 @@ impl std::fmt::Display for ParseError {
 
 impl Error for ParseError {}
 
-#[derive(Debug, Copy, Clone)]
-struct People(usize);
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Purchase {
     descr: String,
@@ -56,7 +53,7 @@ impl SerializedAccounts {
             }
             purchases.push(ParsedPurchase {
                 descr: purchase.descr,
-                who_paid: People(user_id),
+                who_paid: user_id,
                 amount,
                 benef_to_shares,
             });
@@ -68,7 +65,7 @@ impl SerializedAccounts {
 #[derive(Debug)]
 struct ParsedPurchase {
     descr: String,
-    who_paid: People,
+    who_paid: usize,
     amount: Rational64,
     benef_to_shares: Vec<Rational64>,
 }
@@ -77,6 +74,31 @@ struct ParsedPurchase {
 struct ParsedAccounts {
     users: Vec<String>,
     purchases: Vec<ParsedPurchase>,
+}
+
+impl ParsedAccounts {
+    /// Compute the balance for each user
+    fn user_balances(&self) -> Vec<Rational64> {
+        let zero = Rational64::new(0, 1);
+        let mut balances = vec![zero; self.users.len()];
+        for purchase in &self.purchases {
+            let total_shares: Rational64 =
+                purchase.benef_to_shares.iter().sum();
+            if total_shares == zero {
+                eprintln!(
+                    "Warning, transaction {:?} is ignored: shares sum to zero",
+                    purchase,
+                );
+                continue;
+            }
+            for (user_id, share) in purchase.benef_to_shares.iter().enumerate()
+            {
+                balances[user_id] += purchase.amount * share / total_shares;
+            }
+            balances[purchase.who_paid] -= purchase.amount;
+        }
+        balances
+    }
 }
 
 fn rational_from_str(rat_str: &str) -> Result<Rational64, Box<dyn Error>> {
@@ -136,8 +158,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut accounts_file = std::fs::File::open(&accounts_path)?;
     let accounts: SerializedAccounts = serde_yaml::from_reader(accounts_file)?;
     dbg!(&accounts);
-    let accounts = accounts.parse();
-    dbg!(accounts);
+    let accounts = accounts.parse()?;
+    dbg!(&accounts);
+    dbg!(accounts.user_balances());
 
     let accounts = SerializedAccounts {
         users: vec![
