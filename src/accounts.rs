@@ -105,9 +105,9 @@ impl ParsedAccounts {
             }
             for (user_id, share) in purchase.benef_to_shares.iter().enumerate()
             {
-                balances[user_id] += purchase.amount * share / total_shares;
+                balances[user_id] -= purchase.amount * share / total_shares;
             }
-            balances[purchase.who_paid] -= purchase.amount;
+            balances[purchase.who_paid] += purchase.amount;
         }
         balances
     }
