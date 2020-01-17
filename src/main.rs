@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use comptes_vl::accounts::SerializedAccounts;
+use aaacs::accounts::SerializedAccounts;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut args = std::env::args();
