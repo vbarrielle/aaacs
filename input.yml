@@ -1,0 +1,12 @@
+---
+users:
+    - Simon
+    - Shuba
+    - Eska
+purchases:
+    - descr: jambon
+      amount: 15
+      who: Simon
+      benef_to_shares:
+          Simon: 1
+          Shuba: 2
