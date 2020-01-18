@@ -4,9 +4,16 @@ users:
     - Shuba
     - Eska
 purchases:
-    - descr: jambon
+    - descr: wine
       amount: 15
       who: Simon
       benef_to_shares:
           Simon: 1
           Shuba: 2
+    - descr: tartiflette
+      amount: 42
+      who: Eska
+      benef_to_shares:
+          Simon: 1
+          Shuba: 2
+          Eska: 3
