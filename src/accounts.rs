@@ -14,6 +14,7 @@ pub enum ParseError {
     RationalParsingFailed(ParseRationalError),
     UserAlreadyPresent(String),
     UserHasData(String),
+    InvalidPurchase(usize),
 }
 
 impl std::fmt::Display for ParseError {
@@ -33,6 +34,9 @@ impl std::fmt::Display for ParseError {
                 "Cannot remove user {}, he has paid a transaction or shares.",
                 user,
             ),
+            ParseError::InvalidPurchase(index) => {
+                write!(f, "Transaction {} does not exist.", index,)
+            }
         }
     }
 }
@@ -174,6 +178,79 @@ impl ParsedAccounts {
         Ok(())
     }
 
+    /// Add a purchase to the accounts, with empty shares. The purchase shares
+    /// shall be filled-in later.
+    ///
+    /// On success, returns the index of the added purchase.
+    pub fn add_purchase(
+        &mut self,
+        descr: String,
+        who_paid: String,
+        amount: Rational64,
+    ) -> Result<usize, ParseError> {
+        let loc = self.users.binary_search(&who_paid);
+        let who_paid = match loc {
+            Err(_) => return Err(ParseError::UnknownUser(who_paid)),
+            Ok(index) => index,
+        };
+        self.purchases.push(ParsedPurchase {
+            descr,
+            who_paid,
+            amount,
+            benef_to_shares: vec![0.into(); self.users.len()],
+        });
+        Ok(self.purchases.len() - 1)
+    }
+
+    /// Modify the shares for the requested user in a selected purchase
+    pub fn set_purchase_user_share(
+        &mut self,
+        purchase_idx: usize,
+        user: String,
+        share: Rational64,
+    ) -> Result<(), ParseError> {
+        let loc = self.users.binary_search(&user);
+        let user = match loc {
+            Err(_) => return Err(ParseError::UnknownUser(user)),
+            Ok(index) => index,
+        };
+        if purchase_idx >= self.purchases.len() {
+            return Err(ParseError::InvalidPurchase(purchase_idx));
+        }
+        self.purchases[purchase_idx].benef_to_shares[user] = share;
+        Ok(())
+    }
+
+    // Change the user who paid for a purchase
+    pub fn change_purchase_creditor(
+        &mut self,
+        purchase_idx: usize,
+        who_paid: String,
+    ) -> Result<(), ParseError> {
+        let loc = self.users.binary_search(&who_paid);
+        let who_paid = match loc {
+            Err(_) => return Err(ParseError::UnknownUser(who_paid)),
+            Ok(index) => index,
+        };
+        if purchase_idx >= self.purchases.len() {
+            return Err(ParseError::InvalidPurchase(purchase_idx));
+        }
+        self.purchases[purchase_idx].who_paid = who_paid;
+        Ok(())
+    }
+
+    // Change the user who paid for a purchase
+    pub fn change_purchase_amount(
+        &mut self,
+        purchase_idx: usize,
+        amount: Rational64,
+    ) -> Result<(), ParseError> {
+        if purchase_idx >= self.purchases.len() {
+            return Err(ParseError::InvalidPurchase(purchase_idx));
+        }
+        self.purchases[purchase_idx].amount = amount;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -250,5 +327,74 @@ mod test {
         );
         assert!(accounts.remove_user("PlappMachine".to_string()).is_ok());
         assert_eq!(accounts, orig);
+    }
+
+    #[test]
+    fn add_purchase() {
+        let mut accounts = ParsedAccounts {
+            users: vec![
+                "Eska".to_string(),
+                "Shuba".to_string(),
+                "Simon".to_string(),
+            ],
+            purchases: vec![
+                ParsedPurchase {
+                    descr: "jambon".to_string(),
+                    who_paid: 0,
+                    amount: 15.into(),
+                    benef_to_shares: vec![1.into(), 2.into(), 1.into()],
+                },
+                ParsedPurchase {
+                    descr: "vin".to_string(),
+                    who_paid: 2,
+                    amount: 10.into(),
+                    benef_to_shares: vec![0.into(), 2.into(), 1.into()],
+                },
+            ],
+        };
+        let purchase_idx = accounts
+            .add_purchase("fromage".to_string(), "Shuba".to_string(), 23.into())
+            .unwrap();
+        accounts
+            .set_purchase_user_share(
+                purchase_idx,
+                "Eska".to_string(),
+                42.into(),
+            )
+            .unwrap();
+        accounts
+            .change_purchase_creditor(purchase_idx, "Simon".to_string())
+            .unwrap();
+        accounts
+            .change_purchase_amount(purchase_idx, 20.into())
+            .unwrap();
+        let expected = ParsedAccounts {
+            users: vec![
+                "Eska".to_string(),
+                "Shuba".to_string(),
+                "Simon".to_string(),
+            ],
+            purchases: vec![
+                ParsedPurchase {
+                    descr: "jambon".to_string(),
+                    who_paid: 0,
+                    amount: 15.into(),
+                    benef_to_shares: vec![1.into(), 2.into(), 1.into()],
+                },
+                ParsedPurchase {
+                    descr: "vin".to_string(),
+                    who_paid: 2,
+                    amount: 10.into(),
+                    benef_to_shares: vec![0.into(), 2.into(), 1.into()],
+                },
+                ParsedPurchase {
+                    descr: "fromage".to_string(),
+                    who_paid: 2,
+                    amount: 20.into(),
+                    benef_to_shares: vec![42.into(), 0.into(), 0.into()],
+                },
+            ],
+        };
+        assert_eq!(accounts, expected);
     }
 }
