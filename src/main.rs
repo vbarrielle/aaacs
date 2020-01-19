@@ -9,7 +9,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("Processing accounts for {}:", accounts_path);
 
         let accounts_file = std::fs::File::open(&accounts_path)?;
-        let accounts: SerializedAccounts = serde_yaml::from_reader(accounts_file)?;
+        let accounts: SerializedAccounts =
+            serde_yaml::from_reader(accounts_file)?;
         let accounts = accounts.parse()?;
         accounts.print_balances(2);
     }

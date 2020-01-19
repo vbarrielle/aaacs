@@ -1,9 +1,9 @@
 //! Implementations of the internal representation of accounts
-use std::error::Error;
 use std::collections::HashMap;
+use std::error::Error;
 
-use serde::{Deserialize, Serialize};
 use num_rational::Rational64;
+use serde::{Deserialize, Serialize};
 
 use crate::rational::ParseRationalError;
 use crate::rational::{rational_from_str, rational_to_string};
@@ -13,6 +13,7 @@ pub enum ParseError {
     UnknownUser(String),
     RationalParsingFailed(ParseRationalError),
     UserAlreadyPresent(String),
+    UserHasData(String),
 }
 
 impl std::fmt::Display for ParseError {
@@ -27,12 +28,16 @@ impl std::fmt::Display for ParseError {
             ParseError::UserAlreadyPresent(user) => {
                 write!(f, "Cannot insert user {} twice.", user)
             }
+            ParseError::UserHasData(user) => write!(
+                f,
+                "Cannot remove user {}, he has paid a transaction or shares.",
+                user,
+            ),
         }
     }
 }
 
 impl Error for ParseError {}
-
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Purchase {
@@ -78,7 +83,7 @@ impl SerializedAccounts {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct ParsedPurchase {
     descr: String,
     who_paid: usize,
@@ -86,7 +91,7 @@ struct ParsedPurchase {
     benef_to_shares: Vec<Rational64>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ParsedAccounts {
     users: Vec<String>,
     purchases: Vec<ParsedPurchase>,
@@ -145,15 +150,38 @@ impl ParsedAccounts {
         }
         Ok(())
     }
+
+    pub fn remove_user(&mut self, user: String) -> Result<(), ParseError> {
+        let loc = self.users.binary_search(&user);
+        let index = match loc {
+            Err(_) => return Err(ParseError::UnknownUser(user)),
+            Ok(index) => index,
+        };
+        for purchase in self.purchases.iter() {
+            if purchase.who_paid == index
+                || purchase.benef_to_shares[index] > 0.into()
+            {
+                return Err(ParseError::UserHasData(user));
+            }
+        }
+        self.users.remove(index);
+        for purchase in self.purchases.iter_mut() {
+            purchase.benef_to_shares.remove(index);
+            if purchase.who_paid >= index {
+                purchase.who_paid -= 1;
+            }
+        }
+        Ok(())
+    }
+
 }
 
 #[cfg(test)]
-mod test
-{
-    use super::{ParsedAccounts, ParsedPurchase, ParseError};
+mod test {
+    use super::{ParseError, ParsedAccounts, ParsedPurchase};
 
     #[test]
-    fn add_user() {
+    fn add_remove_user() {
         let mut accounts = ParsedAccounts {
             users: vec![
                 "Eska".to_string(),
@@ -165,24 +193,17 @@ mod test
                     descr: "jambon".to_string(),
                     who_paid: 0,
                     amount: 15.into(),
-                    benef_to_shares: vec![
-                        1.into(),
-                        2.into(),
-                        1.into(),
-                    ],
+                    benef_to_shares: vec![1.into(), 2.into(), 1.into()],
                 },
                 ParsedPurchase {
                     descr: "vin".to_string(),
                     who_paid: 2,
                     amount: 10.into(),
-                    benef_to_shares: vec![
-                        0.into(),
-                        2.into(),
-                        1.into(),
-                    ],
+                    benef_to_shares: vec![0.into(), 2.into(), 1.into()],
                 },
             ],
         };
+        let orig = accounts.clone();
         assert_eq!(
             accounts.add_user("Eska".to_string()),
             Err(ParseError::UserAlreadyPresent("Eska".to_string()))
@@ -222,5 +243,12 @@ mod test
             ],
         };
         assert_eq!(accounts, expected);
+
+        assert_eq!(
+            accounts.remove_user("Eska".to_string()),
+            Err(ParseError::UserHasData("Eska".to_string())),
+        );
+        assert!(accounts.remove_user("PlappMachine".to_string()).is_ok());
+        assert_eq!(accounts, orig);
     }
 }
