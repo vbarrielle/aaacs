@@ -3,7 +3,7 @@ use std::num::ParseIntError;
 
 use num_rational::Rational64;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ParseRationalError {
     NumerError(ParseIntError),
     DenomError(ParseIntError),

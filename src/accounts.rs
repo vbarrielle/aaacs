@@ -8,10 +8,11 @@ use num_rational::Rational64;
 use crate::rational::ParseRationalError;
 use crate::rational::{rational_from_str, rational_to_string};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ParseError {
     UnknownUser(String),
     RationalParsingFailed(ParseRationalError),
+    UserAlreadyPresent(String),
 }
 
 impl std::fmt::Display for ParseError {
@@ -22,6 +23,9 @@ impl std::fmt::Display for ParseError {
             }
             ParseError::RationalParsingFailed(error) => {
                 write!(f, "Could not parse rational: {}.", error)
+            }
+            ParseError::UserAlreadyPresent(user) => {
+                write!(f, "Cannot insert user {} twice.", user)
             }
         }
     }
@@ -74,7 +78,7 @@ impl SerializedAccounts {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct ParsedPurchase {
     descr: String,
     who_paid: usize,
@@ -82,7 +86,7 @@ struct ParsedPurchase {
     benef_to_shares: Vec<Rational64>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ParsedAccounts {
     users: Vec<String>,
     purchases: Vec<ParsedPurchase>,
@@ -122,5 +126,101 @@ impl ParsedAccounts {
             );
         }
     }
+
+    /// Add a new user to the accounts. Its shares in all existing transactions
+    /// will be zero.
+    pub fn add_user(&mut self, user: String) -> Result<(), ParseError> {
+        let loc = self.users.binary_search(&user);
+        let index = match loc {
+            Ok(_) => return Err(ParseError::UserAlreadyPresent(user)),
+            Err(index) => index,
+        };
+        self.users.insert(index, user);
+        let zero = Rational64::new(0, 1);
+        for purchase in self.purchases.iter_mut() {
+            purchase.benef_to_shares.insert(index, zero);
+            if purchase.who_paid >= index {
+                purchase.who_paid += 1;
+            }
+        }
+        Ok(())
+    }
 }
 
+#[cfg(test)]
+mod test
+{
+    use super::{ParsedAccounts, ParsedPurchase, ParseError};
+
+    #[test]
+    fn add_user() {
+        let mut accounts = ParsedAccounts {
+            users: vec![
+                "Eska".to_string(),
+                "Shuba".to_string(),
+                "Simon".to_string(),
+            ],
+            purchases: vec![
+                ParsedPurchase {
+                    descr: "jambon".to_string(),
+                    who_paid: 0,
+                    amount: 15.into(),
+                    benef_to_shares: vec![
+                        1.into(),
+                        2.into(),
+                        1.into(),
+                    ],
+                },
+                ParsedPurchase {
+                    descr: "vin".to_string(),
+                    who_paid: 2,
+                    amount: 10.into(),
+                    benef_to_shares: vec![
+                        0.into(),
+                        2.into(),
+                        1.into(),
+                    ],
+                },
+            ],
+        };
+        assert_eq!(
+            accounts.add_user("Eska".to_string()),
+            Err(ParseError::UserAlreadyPresent("Eska".to_string()))
+        );
+
+        assert!(accounts.add_user("PlappMachine".to_string()).is_ok());
+        let expected = ParsedAccounts {
+            users: vec![
+                "Eska".to_string(),
+                "PlappMachine".to_string(),
+                "Shuba".to_string(),
+                "Simon".to_string(),
+            ],
+            purchases: vec![
+                ParsedPurchase {
+                    descr: "jambon".to_string(),
+                    who_paid: 0,
+                    amount: 15.into(),
+                    benef_to_shares: vec![
+                        1.into(),
+                        0.into(),
+                        2.into(),
+                        1.into(),
+                    ],
+                },
+                ParsedPurchase {
+                    descr: "vin".to_string(),
+                    who_paid: 3,
+                    amount: 10.into(),
+                    benef_to_shares: vec![
+                        0.into(),
+                        0.into(),
+                        2.into(),
+                        1.into(),
+                    ],
+                },
+            ],
+        };
+        assert_eq!(accounts, expected);
+    }
+}
