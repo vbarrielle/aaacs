@@ -251,6 +251,18 @@ impl ParsedAccounts {
         self.purchases[purchase_idx].amount = amount;
         Ok(())
     }
+
+    // Remove a purchase
+    pub fn remove_purchase(
+        &mut self,
+        purchase_idx: usize,
+    ) -> Result<(), ParseError> {
+        if purchase_idx >= self.purchases.len() {
+            return Err(ParseError::InvalidPurchase(purchase_idx));
+        }
+        self.purchases.remove(purchase_idx);
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -368,6 +380,7 @@ mod test {
         accounts
             .change_purchase_amount(purchase_idx, 20.into())
             .unwrap();
+        accounts.remove_purchase(0).unwrap();
         let expected = ParsedAccounts {
             users: vec![
                 "Eska".to_string(),
@@ -375,12 +388,6 @@ mod test {
                 "Simon".to_string(),
             ],
             purchases: vec![
-                ParsedPurchase {
-                    descr: "jambon".to_string(),
-                    who_paid: 0,
-                    amount: 15.into(),
-                    benef_to_shares: vec![1.into(), 2.into(), 1.into()],
-                },
                 ParsedPurchase {
                     descr: "vin".to_string(),
                     who_paid: 2,
