@@ -95,13 +95,18 @@ struct ParsedPurchase {
     benef_to_shares: Vec<Rational64>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct ParsedAccounts {
     users: Vec<String>,
     purchases: Vec<ParsedPurchase>,
 }
 
 impl ParsedAccounts {
+    /// Return the existing users
+    pub fn users(&self) -> &[String] {
+        &self.users[..]
+    }
+
     /// Compute the balance for each user
     fn user_balances(&self) -> Vec<Rational64> {
         let zero = Rational64::new(0, 1);

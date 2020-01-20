@@ -11,8 +11,12 @@ edition = "2018"
 
 serde = { version = "1.0.104", features = ["derive"] }
 serde_yaml = "0.8.11"
+iced = { version = "0.1.0-beta" }
 
 [dependencies.num-rational]
 
 version = "0.2"
 features = ["serde"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2.51"
