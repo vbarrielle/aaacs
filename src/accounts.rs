@@ -88,11 +88,33 @@ impl SerializedAccounts {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-struct ParsedPurchase {
+pub struct ParsedPurchase {
     descr: String,
     who_paid: usize,
     amount: Rational64,
     benef_to_shares: Vec<Rational64>,
+}
+
+impl ParsedPurchase {
+    pub fn descr(&self) -> &str {
+        &self.descr
+    }
+
+    pub fn who_paid<'a>(&self, accounts: &'a ParsedAccounts) -> &'a str {
+        &accounts.users[self.who_paid]
+    }
+
+    pub fn amount(&self) -> Rational64 {
+        self.amount
+    }
+
+    pub fn benef_to_shares<'a>(
+        &'a self, accounts: &'a ParsedAccounts
+    ) -> impl Iterator<Item=(&'a str, Rational64)> {
+        self.benef_to_shares.iter().enumerate().map(move |(uid, share)| {
+            (&accounts.users[uid][..], *share)
+        })
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -105,6 +127,10 @@ impl ParsedAccounts {
     /// Return the existing users
     pub fn users(&self) -> &[String] {
         &self.users[..]
+    }
+
+    pub fn purchases(&self) -> &[ParsedPurchase] {
+        &self.purchases[..]
     }
 
     /// Compute the balance for each user
