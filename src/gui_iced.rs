@@ -18,12 +18,14 @@ struct Accounts {
     last_error: Option<ParseError>,
     new_user: String,
     new_user_state: text_input::State,
+    new_purchase_btn_state: button::State,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
     NewUserStrChange(String),
     AddUser,
+    AddPurchase,
 }
 
 impl Sandbox for Accounts {
@@ -45,7 +47,14 @@ impl Sandbox for Accounts {
             Message::NewUserStrChange(new_user) => {
                 self.new_user = new_user;
                 Ok(())
-            }
+            },
+            Message::AddPurchase => {
+                self.accounts.add_purchase(
+                    "Transaction".to_string(),
+                    self.accounts.users()[0].to_string(),
+                    0.into(),
+                ).map(|_| ())
+            },
         }.err();
     }
 
@@ -54,7 +63,7 @@ impl Sandbox for Accounts {
         for user in self.accounts.users() {
             column = column.push(Text::new(user.clone()));
         }
-        column
+        column = column
             .push(
                 TextInput::new(
                     &mut self.new_user_state,
@@ -62,7 +71,21 @@ impl Sandbox for Accounts {
                     &self.new_user,
                     Message::NewUserStrChange,
                 ).on_submit(Message::AddUser),
-            )
-            .into()
+            );
+        for purchase in self.accounts.purchases() {
+            column = column.push(
+                Text::new(purchase.descr())
+            );
+        }
+        if self.accounts.users().len() > 0 {
+            column = column
+                .push(
+                    Button::new(
+                        &mut self.new_purchase_btn_state,
+                        Text::new("Add transaction"),
+                    ).on_press(Message::AddPurchase)
+                );
+        }
+        column.into()
     }
 }
