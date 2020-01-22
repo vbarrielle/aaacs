@@ -43,6 +43,9 @@ pub fn rational_from_str(
     let integral_part = Rational64::new(integral_part, 1);
     if let Some(decimal_part) = parts_iter.next() {
         let nb_decimals = decimal_part.len();
+        if nb_decimals == 0 {
+            return Ok(integral_part);
+        }
         Ok(integral_part
             + Rational64::new(
                 decimal_part
@@ -98,6 +101,10 @@ mod test {
     fn rational_from_str() {
         assert_eq!(
             super::rational_from_str(&"10").unwrap(),
+            Rational64::new(10, 1),
+        );
+        assert_eq!(
+            super::rational_from_str(&"10.").unwrap(),
             Rational64::new(10, 1),
         );
         assert_eq!(
