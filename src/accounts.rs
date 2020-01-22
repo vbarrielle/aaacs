@@ -10,6 +10,7 @@ use crate::rational::{rational_from_str, rational_to_string};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParseError {
+    EmptyUser,
     UnknownUser(String),
     RationalParsingFailed(ParseRationalError),
     UserAlreadyPresent(String),
@@ -20,6 +21,9 @@ pub enum ParseError {
 impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            ParseError::EmptyUser => {
+                write!(f, "Cannot add the empty string as a new user")
+            }
             ParseError::UnknownUser(user) => {
                 write!(f, "Unknown user: {}", user)
             }
@@ -172,6 +176,9 @@ impl ParsedAccounts {
     /// Add a new user to the accounts. Its shares in all existing transactions
     /// will be zero.
     pub fn add_user(&mut self, user: String) -> Result<(), ParseError> {
+        if user.len() == 0 {
+            return Err(ParseError::EmptyUser);
+        }
         let loc = self.users.binary_search(&user);
         let index = match loc {
             Ok(_) => return Err(ParseError::UserAlreadyPresent(user)),
