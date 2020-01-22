@@ -21,7 +21,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-
 // This should be gracefully handled by Iced in the future. Probably using our
 // own proc macro, or maybe the whole process is streamlined by `wasm-pack` at
 // some point.

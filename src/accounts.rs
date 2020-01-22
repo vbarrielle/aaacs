@@ -109,11 +109,13 @@ impl ParsedPurchase {
     }
 
     pub fn benef_to_shares<'a>(
-        &'a self, accounts: &'a ParsedAccounts
-    ) -> impl Iterator<Item=(&'a str, Rational64)> {
-        self.benef_to_shares.iter().enumerate().map(move |(uid, share)| {
-            (&accounts.users[uid][..], *share)
-        })
+        &'a self,
+        accounts: &'a ParsedAccounts,
+    ) -> impl Iterator<Item = (&'a str, Rational64)> {
+        self.benef_to_shares
+            .iter()
+            .enumerate()
+            .map(move |(uid, share)| (&accounts.users[uid][..], *share))
     }
 }
 

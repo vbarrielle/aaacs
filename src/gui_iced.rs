@@ -1,12 +1,11 @@
 //! GUI based on the `iced` library.
 
-
 use iced::{
-    button, Button, Column, Element, Sandbox, Settings, Text, TextInput,
-    text_input,
+    button, text_input, Button, Column, Element, Sandbox, Settings, Text,
+    TextInput,
 };
 
-use crate::accounts::{ParsedAccounts, ParseError};
+use crate::accounts::{ParseError, ParsedAccounts};
 
 pub fn run() {
     Accounts::run(Settings::default());
@@ -41,21 +40,21 @@ impl Sandbox for Accounts {
 
     fn update(&mut self, message: Message) {
         self.last_error = match message {
-            Message::AddUser => {
-                self.accounts.add_user(self.new_user.clone())
-            },
+            Message::AddUser => self.accounts.add_user(self.new_user.clone()),
             Message::NewUserStrChange(new_user) => {
                 self.new_user = new_user;
                 Ok(())
-            },
-            Message::AddPurchase => {
-                self.accounts.add_purchase(
+            }
+            Message::AddPurchase => self
+                .accounts
+                .add_purchase(
                     "Transaction".to_string(),
                     self.accounts.users()[0].to_string(),
                     0.into(),
-                ).map(|_| ())
-            },
-        }.err();
+                )
+                .map(|_| ()),
+        }
+        .err();
     }
 
     fn view(&mut self) -> Element<Message> {
@@ -63,28 +62,26 @@ impl Sandbox for Accounts {
         for user in self.accounts.users() {
             column = column.push(Text::new(user.clone()));
         }
-        column = column
-            .push(
-                TextInput::new(
-                    &mut self.new_user_state,
-                    "New user",
-                    &self.new_user,
-                    Message::NewUserStrChange,
-                ).on_submit(Message::AddUser),
-            );
+        column = column.push(
+            TextInput::new(
+                &mut self.new_user_state,
+                "New user",
+                &self.new_user,
+                Message::NewUserStrChange,
+            )
+            .on_submit(Message::AddUser),
+        );
         for purchase in self.accounts.purchases() {
-            column = column.push(
-                Text::new(purchase.descr())
-            );
+            column = column.push(Text::new(purchase.descr()));
         }
         if self.accounts.users().len() > 0 {
-            column = column
-                .push(
-                    Button::new(
-                        &mut self.new_purchase_btn_state,
-                        Text::new("Add transaction"),
-                    ).on_press(Message::AddPurchase)
-                );
+            column = column.push(
+                Button::new(
+                    &mut self.new_purchase_btn_state,
+                    Text::new("Add transaction"),
+                )
+                .on_press(Message::AddPurchase),
+            );
         }
         column.into()
     }
