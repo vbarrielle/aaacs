@@ -26,6 +26,8 @@ struct Accounts {
     new_transaction_creditor: String,
     new_transaction_amount: String,
     new_transaction_amount_state: text_input::State,
+    #[cfg(feature = "debug")]
+    latest_message: Option<Message>,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +52,11 @@ impl Sandbox for Accounts {
     }
 
     fn update(&mut self, message: Message) {
+        #[cfg(feature = "debug")]
+        {
+            self.latest_message = Some(message.clone());
+        }
+
         self.last_error = match message {
             Message::AddUser => {
                 let mut new_user = String::new();
@@ -202,6 +209,15 @@ impl Sandbox for Accounts {
                 Text::new(format!("Error: {}", last_error))
                     .color([1.0, 0., 0.]),
             );
+        }
+        #[cfg(feature = "debug")]
+        {
+            if let Some(latest_message) = &self.latest_message {
+                column = column.push(Text::new(format!(
+                    "Latest message: {:?}",
+                    latest_message
+                )));
+            }
         }
         column.into()
     }
