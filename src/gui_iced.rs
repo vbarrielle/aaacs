@@ -109,9 +109,8 @@ impl Sandbox for Accounts {
 
     fn view(&mut self) -> Element<Message> {
         let mut column = Column::new().padding(20);
-        column = column.push(
-            Text::new(format!("{} users:", self.accounts.users().len()))
-        );
+        column = column
+            .push(Text::new(format!("{} users:", self.accounts.users().len())));
         for user in self.accounts.users() {
             column = column.push(Text::new(user.clone()));
         }
@@ -134,13 +133,10 @@ impl Sandbox for Accounts {
                     .on_press(Message::AddUser),
                 ),
         );
-        column = column.push(
-            Text::new(
-                format!(
-                    "{} transactions:", self.accounts.purchases().len()
-                )
-            )
-        );
+        column = column.push(Text::new(format!(
+            "{} transactions:",
+            self.accounts.purchases().len()
+        )));
         for purchase in self.accounts.purchases() {
             let mut row = Row::new();
             // TODO make editable (if purchase selected?)
@@ -182,13 +178,24 @@ impl Sandbox for Accounts {
                     Message::NewAmountStrChange,
                 ));
             column = column.push(row);
-            column = column.push(
-                Button::new(
-                    &mut self.new_purchase_btn_state,
-                    Text::new("Add transaction"),
-                )
-                .on_press(Message::AddPurchase),
-            );
+            if self.new_transaction_descr.len() > 0
+                && self.new_transaction_creditor.len() > 0
+                && self.new_transaction_amount.len() > 0
+            {
+                // FIXME this button is shown conditionally in part
+                // because there could be a bug where pressing this button
+                // before filling the new transaction info could prevent
+                // messages from being sent. I do think having this button
+                // conditionned on its ability to be clicked is a good idea
+                // though.
+                column = column.push(
+                    Button::new(
+                        &mut self.new_purchase_btn_state,
+                        Text::new("Add transaction"),
+                    )
+                    .on_press(Message::AddPurchase),
+                );
+            }
         }
         if let Some(last_error) = &self.last_error {
             column = column.push(
