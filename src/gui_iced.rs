@@ -78,15 +78,31 @@ impl Sandbox for Accounts {
                 }
                 Ok(())
             }
-            Message::AddPurchase => self
-                .accounts
-                .add_purchase(
-                    self.new_transaction_descr.clone(),
-                    self.new_transaction_creditor.clone(),
-                    // No Panic: validity of rational has been enforced by GUI
-                    rational_from_str(&self.new_transaction_amount).unwrap(),
-                )
-                .map(|_| ()),
+            Message::AddPurchase => {
+                let mut new_transaction_descr = String::new();
+                let mut new_transaction_creditor = String::new();
+                let mut new_transaction_amount = String::new();
+                std::mem::swap(
+                    &mut new_transaction_descr,
+                    &mut self.new_transaction_descr,
+                );
+                std::mem::swap(
+                    &mut new_transaction_creditor,
+                    &mut self.new_transaction_creditor,
+                );
+                std::mem::swap(
+                    &mut new_transaction_amount,
+                    &mut self.new_transaction_amount,
+                );
+                self.accounts
+                    .add_purchase(
+                        new_transaction_descr,
+                        new_transaction_creditor,
+                        // No Panic: validity of rational enforced by GUI
+                        rational_from_str(&new_transaction_amount).unwrap(),
+                    )
+                    .map(|_| ())
+            }
         }
         .err();
     }
