@@ -109,6 +109,9 @@ impl Sandbox for Accounts {
 
     fn view(&mut self) -> Element<Message> {
         let mut column = Column::new().padding(20);
+        column = column.push(
+            Text::new(format!("{} users:", self.accounts.users().len()))
+        );
         for user in self.accounts.users() {
             column = column.push(Text::new(user.clone()));
         }
@@ -130,6 +133,13 @@ impl Sandbox for Accounts {
                     )
                     .on_press(Message::AddUser),
                 ),
+        );
+        column = column.push(
+            Text::new(
+                format!(
+                    "{} transactions:", self.accounts.purchases().len()
+                )
+            )
         );
         for purchase in self.accounts.purchases() {
             let mut row = Row::new();

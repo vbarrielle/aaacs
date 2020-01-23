@@ -11,6 +11,7 @@ use crate::rational::{rational_from_str, rational_to_string};
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParseError {
     EmptyUser,
+    EmptyDescr,
     UnknownUser(String),
     RationalParsingFailed(ParseRationalError),
     UserAlreadyPresent(String),
@@ -23,6 +24,9 @@ impl std::fmt::Display for ParseError {
         match self {
             ParseError::EmptyUser => {
                 write!(f, "Cannot add the empty string as a new user")
+            }
+            ParseError::EmptyDescr => {
+                write!(f, "Cannot add the empty string as a description")
             }
             ParseError::UnknownUser(user) => {
                 write!(f, "Unknown user: {}", user)
@@ -228,6 +232,12 @@ impl ParsedAccounts {
         who_paid: String,
         amount: Rational64,
     ) -> Result<usize, ParseError> {
+        if who_paid.len() == 0 {
+            return Err(ParseError::EmptyUser);
+        }
+        if descr.len() == 0 {
+            return Err(ParseError::EmptyDescr);
+        }
         let loc = self.users.binary_search(&who_paid);
         let who_paid = match loc {
             Err(_) => return Err(ParseError::UnknownUser(who_paid)),
