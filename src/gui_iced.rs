@@ -181,7 +181,10 @@ impl Sandbox for Accounts {
             );
         }
         if let Some(last_error) = &self.last_error {
-            column = column.push(Text::new(format!("Error: {}", last_error)));
+            column = column.push(
+                Text::new(format!("Error: {}", last_error))
+                    .color([1.0, 0., 0.]),
+            );
         }
         column.into()
     }
