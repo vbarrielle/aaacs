@@ -6,7 +6,7 @@ use iced::{
 };
 
 use crate::accounts::{ParseError, ParsedAccounts};
-use crate::rational::rational_from_str;
+use crate::rational::{rational_from_str, rational_to_string};
 
 pub fn run() {
     Accounts::run(Settings::default());
@@ -132,7 +132,18 @@ impl Sandbox for Accounts {
                 ),
         );
         for purchase in self.accounts.purchases() {
-            column = column.push(Text::new(purchase.descr()));
+            let mut row = Row::new();
+            // TODO make editable (if purchase selected?)
+            row = row.push(Text::new(format!("{}: ", purchase.descr())));
+            row = row.push(Text::new(format!(
+                "{} €",
+                rational_to_string(purchase.amount(), 2)
+            )));
+            row = row.push(Text::new(format!(
+                ", paid by {}",
+                purchase.who_paid(&self.accounts)
+            )));
+            column = column.push(row);
         }
         if self.accounts.users().len() > 0 {
             let mut user_choice = Column::new();
