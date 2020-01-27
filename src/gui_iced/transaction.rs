@@ -96,3 +96,43 @@ impl Transaction {
         self.descr.len() > 0 && self.creditor.len() > 0 && self.amount.len() > 0
     }
 }
+
+mod shares {
+
+    use iced::{text_input, Element, TextInput};
+    use crate::rational::rational_from_str;
+
+    #[derive(Default)]
+    pub struct Share {
+        value: String,
+        state: text_input::State,
+    }
+
+    #[derive(Debug, Clone)]
+    pub enum Message {
+        StrChange(String),
+    }
+
+    impl Share {
+        pub fn update(&mut self, message: Message, users: &[String]) {
+            match message {
+                Message::StrChange(share) => {
+                    if share.len() == 0
+                        || rational_from_str(&share).is_ok()
+                    {
+                        self.value = share;
+                    }
+                }
+            }
+        }
+
+        pub fn view(&mut self, users: &[String]) -> Element<Message> {
+            TextInput::new(
+                &mut self.state,
+                "Share",
+                &self.value,
+                Message::StrChange,
+            ).into()
+        }
+    }
+}

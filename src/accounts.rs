@@ -125,6 +125,10 @@ impl ParsedPurchase {
             .enumerate()
             .map(move |(uid, share)| (&accounts.users[uid][..], *share))
     }
+
+    pub fn shares(&self) -> &[Rational64] {
+        &self.benef_to_shares[..]
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
