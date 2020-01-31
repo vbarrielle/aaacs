@@ -17,6 +17,7 @@ pub enum ParseError {
     UserAlreadyPresent(String),
     UserHasData(String),
     InvalidPurchase(usize),
+    InvalidUserId(usize),
 }
 
 impl std::fmt::Display for ParseError {
@@ -44,6 +45,9 @@ impl std::fmt::Display for ParseError {
             ),
             ParseError::InvalidPurchase(index) => {
                 write!(f, "Transaction {} does not exist.", index,)
+            }
+            ParseError::InvalidUserId(index) => {
+                write!(f, "User id {} does not exist.", index,)
             }
         }
     }
@@ -275,6 +279,27 @@ impl ParsedAccounts {
         Ok(())
     }
 
+    /// Set all the shares of a transaction in one pass
+    ///
+    /// The `shares` should be an iterator yielding the user ids of the
+    /// users whose shares must be set, and the corresponding share.
+    pub fn set_purchase_shares(
+        &mut self,
+        purchase_idx: usize,
+        shares: impl Iterator<Item = (usize, Rational64)>,
+    ) -> Result<(), ParseError> {
+        if purchase_idx >= self.purchases.len() {
+            return Err(ParseError::InvalidPurchase(purchase_idx));
+        }
+        for (uid, share) in shares {
+            if uid >= self.users.len() {
+                return Err(ParseError::InvalidUserId(uid));
+            }
+            self.purchases[purchase_idx].benef_to_shares[uid] = share;
+        }
+        Ok(())
+    }
+
     // Change the user who paid for a purchase
     pub fn change_purchase_creditor(
         &mut self,
@@ -435,6 +460,13 @@ mod test {
             .change_purchase_amount(purchase_idx, 20.into())
             .unwrap();
         accounts.remove_purchase(0).unwrap();
+
+        accounts
+            .set_purchase_shares(
+                0,
+                [(0, 1.into()), (2, 3.into())].iter().cloned(),
+            )
+            .unwrap();
         let expected = ParsedAccounts {
             users: vec![
                 "Eska".to_string(),
@@ -446,7 +478,7 @@ mod test {
                     descr: "vin".to_string(),
                     who_paid: 2,
                     amount: 10.into(),
-                    benef_to_shares: vec![0.into(), 2.into(), 1.into()],
+                    benef_to_shares: vec![1.into(), 2.into(), 3.into()],
                 },
                 ParsedPurchase {
                     descr: "fromage".to_string(),
