@@ -107,12 +107,17 @@ impl Sandbox for Accounts {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let mut column = Column::new().padding(20);
-        column = column
+        let mut column = Column::new().padding(20).spacing(10);
+        let mut users_row = Row::new().spacing(20);
+        users_row = users_row
             .push(Text::new(format!("{} users:", self.accounts.users().len())));
         for user in self.accounts.users() {
-            column = column.push(Text::new(user.clone()));
+            users_row = users_row.push(
+                Text::new(user.clone())
+                    .horizontal_alignment(iced::HorizontalAlignment::Center),
+            );
         }
+        column = column.push(users_row);
         column = column.push(
             Row::new()
                 .push(

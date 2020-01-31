@@ -86,7 +86,7 @@ impl Transaction {
         let mut shares_col = Column::new();
         for (uid, share) in self.shares.iter_mut().enumerate() {
             shares_col = shares_col.push(
-                Row::new().push(Text::new(&users[uid])).push(
+                Row::new().spacing(5).push(Text::new(&users[uid])).push(
                     share
                         .view()
                         .map(move |msg| Message::ShareChanged(uid, msg)),
@@ -94,6 +94,7 @@ impl Transaction {
             );
         }
         Row::new()
+            .spacing(10)
             .push(TextInput::new(
                 &mut self.descr_state,
                 "Transaction name",
