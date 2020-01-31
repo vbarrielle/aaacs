@@ -101,25 +101,13 @@ impl SerializedAccounts {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ParsedPurchase {
-    descr: String,
-    who_paid: usize,
-    amount: Rational64,
+    pub descr: String,
+    pub who_paid: usize,
+    pub amount: Rational64,
     benef_to_shares: Vec<Rational64>,
 }
 
 impl ParsedPurchase {
-    pub fn descr(&self) -> &str {
-        &self.descr
-    }
-
-    pub fn who_paid<'a>(&self, accounts: &'a ParsedAccounts) -> &'a str {
-        &accounts.users[self.who_paid]
-    }
-
-    pub fn amount(&self) -> Rational64 {
-        self.amount
-    }
-
     pub fn benef_to_shares<'a>(
         &'a self,
         accounts: &'a ParsedAccounts,
@@ -132,6 +120,18 @@ impl ParsedPurchase {
 
     pub fn shares(&self) -> &[Rational64] {
         &self.benef_to_shares[..]
+    }
+
+    pub fn set_share(
+        &mut self,
+        uid: usize,
+        share: Rational64,
+    ) -> Result<(), ParseError> {
+        if uid >= self.benef_to_shares.len() {
+            return Err(ParseError::InvalidUserId(uid));
+        }
+        self.benef_to_shares[uid] = share;
+        Ok(())
     }
 }
 
@@ -149,6 +149,20 @@ impl ParsedAccounts {
 
     pub fn purchases(&self) -> &[ParsedPurchase] {
         &self.purchases[..]
+    }
+
+    /// Get a mutable reference to the selected transaction.
+    ///
+    /// For borrow-checking reasons, we also return the view on our
+    /// users.
+    pub fn purchase_mut(
+        &mut self,
+        purchase_idx: usize,
+    ) -> Result<(&mut ParsedPurchase, &[String]), ParseError> {
+        if purchase_idx >= self.purchases.len() {
+            return Err(ParseError::InvalidPurchase(purchase_idx));
+        }
+        Ok((&mut self.purchases[purchase_idx], &self.users))
     }
 
     /// Compute the balance for each user
@@ -292,10 +306,7 @@ impl ParsedAccounts {
             return Err(ParseError::InvalidPurchase(purchase_idx));
         }
         for (uid, share) in shares {
-            if uid >= self.users.len() {
-                return Err(ParseError::InvalidUserId(uid));
-            }
-            self.purchases[purchase_idx].benef_to_shares[uid] = share;
+            self.purchases[purchase_idx].set_share(uid, share)?;
         }
         Ok(())
     }

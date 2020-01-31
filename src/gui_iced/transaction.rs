@@ -4,9 +4,10 @@ use iced::{text_input, Column, Element, Radio, Row, Text, TextInput};
 
 use num_rational::Rational64;
 
+use crate::accounts::ParsedPurchase;
 use crate::rational::rational_from_str;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Transaction {
     descr: String,
     descr_state: text_input::State,
@@ -26,24 +27,39 @@ pub enum Message {
 }
 
 impl Transaction {
-    pub fn update(&mut self, message: Message, users: &[String]) {
+    pub fn update(
+        &mut self,
+        message: Message,
+        users: &[String],
+        to_update: Option<&mut ParsedPurchase>,
+    ) {
         match message {
             Message::DescrStrChange(new_descr) => {
-                self.descr = new_descr;
+                self.descr = new_descr.clone();
+                to_update.map(|trans| trans.descr = new_descr);
             }
             Message::AmountStrChange(new_amount) => {
-                if new_amount.len() == 0
-                    || rational_from_str(&new_amount).is_ok()
-                {
+                if new_amount.len() == 0 {
                     self.amount = new_amount;
+                    to_update.map(|trans| trans.amount = 0.into());
+                } else if let Ok(val) = rational_from_str(&new_amount) {
+                    self.amount = new_amount;
+                    to_update.map(|trans| trans.amount = val);
                 }
             }
             Message::UserSelected(uid) => {
                 self.creditor = users[uid].to_string();
                 self.uid = uid;
+                to_update.map(|trans| trans.who_paid = uid);
             }
             Message::ShareChanged(uid, message) => {
                 self.shares[uid].update(message);
+                to_update.map(|trans| {
+                    trans.set_share(
+                        uid,
+                        self.shares[uid].value().unwrap_or(0.into()),
+                    )
+                });
             }
         }
     }

@@ -6,7 +6,6 @@ use iced::{
 };
 
 use crate::accounts::{ParseError, ParsedAccounts};
-use crate::rational::rational_to_string;
 
 mod transaction;
 
@@ -21,6 +20,7 @@ struct Accounts {
     new_user: String,
     new_user_btn_state: button::State,
     new_user_state: text_input::State,
+    transactions: Vec<transaction::Transaction>,
     new_purchase_btn_state: button::State,
     new_transaction: transaction::Transaction,
     #[cfg(feature = "debug")]
@@ -31,6 +31,7 @@ struct Accounts {
 enum Message {
     NewUserStrChange(String),
     NewTransaction(transaction::Message),
+    TransactionChange(usize, transaction::Message),
     AddUser,
     AddPurchase,
 }
@@ -63,10 +64,15 @@ impl Sandbox for Accounts {
                 Ok(())
             }
             Message::NewTransaction(message) => {
-                self.new_transaction.update(message, self.accounts.users());
+                self.new_transaction.update(
+                    message,
+                    self.accounts.users(),
+                    None,
+                );
                 Ok(())
             }
             Message::AddPurchase => {
+                self.transactions.push(self.new_transaction.clone());
                 let purchase_idx = self.accounts.add_purchase(
                     self.new_transaction.take_descr(),
                     self.new_transaction.take_creditor(),
@@ -79,6 +85,20 @@ impl Sandbox for Accounts {
                     )
                 } else {
                     purchase_idx.map(|_| ())
+                }
+            }
+            Message::TransactionChange(purchase_idx, message) => {
+                let transaction = self.accounts.purchase_mut(purchase_idx);
+                match transaction {
+                    Ok((transaction, users)) => {
+                        self.transactions[purchase_idx].update(
+                            message,
+                            users,
+                            Some(transaction),
+                        );
+                        Ok(())
+                    }
+                    Err(err) => Err(err),
                 }
             }
         }
@@ -115,26 +135,12 @@ impl Sandbox for Accounts {
             "{} transactions:",
             self.accounts.purchases().len()
         )));
-        for purchase in self.accounts.purchases() {
-            let mut row = Row::new();
-            // TODO make editable (if purchase selected?)
-            row = row.push(Text::new(format!("{}: ", purchase.descr())));
-            row = row.push(Text::new(format!(
-                "{} €",
-                rational_to_string(purchase.amount(), 2)
-            )));
-            row = row.push(Text::new(format!(
-                ", paid by {}",
-                purchase.who_paid(&self.accounts)
-            )));
-            for (user, share) in purchase.benef_to_shares(&self.accounts) {
-                row = row.push(Text::new(format!(
-                    "User {} has a share of {}",
-                    user,
-                    rational_to_string(share, 2),
-                )));
-            }
-            column = column.push(row);
+        for (tid, transaction) in self.transactions.iter_mut().enumerate() {
+            column = column.push(
+                transaction
+                    .view(self.accounts.users())
+                    .map(move |msg| Message::TransactionChange(tid, msg)),
+            );
         }
         if self.accounts.users().len() > 0 {
             let can_add_transaction = self.new_transaction.is_valid();
