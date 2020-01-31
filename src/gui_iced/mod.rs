@@ -120,6 +120,7 @@ impl Sandbox for Accounts {
         column = column.push(users_row);
         column = column.push(
             Row::new()
+                .spacing(10)
                 .push(
                     TextInput::new(
                         &mut self.new_user_state,
@@ -134,6 +135,9 @@ impl Sandbox for Accounts {
                         &mut self.new_user_btn_state,
                         Text::new("Add user"),
                     )
+                    .background(iced::Background::Color([0., 0.8, 0.8].into()))
+                    .border_radius(5)
+                    .padding(2)
                     .on_press(Message::AddUser),
                 ),
         );
