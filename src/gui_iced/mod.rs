@@ -6,6 +6,7 @@ use iced::{
 };
 
 use crate::accounts::{ParseError, ParsedAccounts};
+use crate::rational::rational_to_string;
 
 mod transaction;
 
@@ -165,6 +166,18 @@ impl Sandbox for Accounts {
                 );
             }
         }
+
+        column = column.push(Text::new("User balances:"));
+        let balances = self.accounts.user_balances();
+        let users = self.accounts.users();
+        for (user, balance) in users.iter().zip(&balances) {
+            column = column.push(Text::new(format!(
+                "{} has a balance of: {}",
+                user,
+                rational_to_string(*balance, 2),
+            )));
+        }
+
         if let Some(last_error) = &self.last_error {
             column = column.push(
                 Text::new(format!("Error: {}", last_error))

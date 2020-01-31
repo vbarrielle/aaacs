@@ -166,7 +166,7 @@ impl ParsedAccounts {
     }
 
     /// Compute the balance for each user
-    fn user_balances(&self) -> Vec<Rational64> {
+    pub fn user_balances(&self) -> Vec<Rational64> {
         let zero = Rational64::new(0, 1);
         let mut balances = vec![zero; self.users.len()];
         for purchase in &self.purchases {
