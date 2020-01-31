@@ -353,6 +353,32 @@ impl ParsedAccounts {
         self.purchases.remove(purchase_idx);
         Ok(())
     }
+
+    pub fn as_serializable(&self) -> SerializedAccounts {
+        SerializedAccounts {
+            users: self.users.clone(),
+            purchases: self
+                .purchases
+                .iter()
+                .map(|purchase| Purchase {
+                    descr: purchase.descr.clone(),
+                    who: self.users[purchase.who_paid].clone(),
+                    amount: rational_to_string(purchase.amount, 2),
+                    benef_to_shares: purchase
+                        .benef_to_shares
+                        .iter()
+                        .enumerate()
+                        .map(|(uid, share)| {
+                            (
+                                self.users[uid].clone(),
+                                rational_to_string(*share, 2),
+                            )
+                        })
+                        .collect(),
+                })
+                .collect(),
+        }
+    }
 }
 
 #[cfg(test)]

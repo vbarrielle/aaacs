@@ -179,6 +179,18 @@ impl Sandbox for Accounts {
                     latest_message
                 )));
             }
+            if let Ok(yaml) =
+                serde_yaml::to_string(&self.accounts.as_serializable())
+            {
+                column = column.push(Text::new("YAML serialization:"));
+                for line in yaml.lines() {
+                    column = column.push(Text::new(line));
+                }
+            } else {
+                column = column.push(
+                    Text::new("Could not serialize YAML").color([1.0, 0., 0.]),
+                );
+            }
         }
         column.into()
     }
