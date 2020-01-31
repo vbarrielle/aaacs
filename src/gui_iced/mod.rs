@@ -66,14 +66,21 @@ impl Sandbox for Accounts {
                 self.new_transaction.update(message, self.accounts.users());
                 Ok(())
             }
-            Message::AddPurchase => self
-                .accounts
-                .add_purchase(
+            Message::AddPurchase => {
+                let purchase_idx = self.accounts.add_purchase(
                     self.new_transaction.take_descr(),
                     self.new_transaction.take_creditor(),
                     self.new_transaction.take_amount(),
-                )
-                .map(|_| ()),
+                );
+                if let Ok(purchase_idx) = purchase_idx {
+                    self.accounts.set_purchase_shares(
+                        purchase_idx,
+                        self.new_transaction.per_user_shares(),
+                    )
+                } else {
+                    purchase_idx.map(|_| ())
+                }
+            }
         }
         .err();
     }
@@ -120,6 +127,13 @@ impl Sandbox for Accounts {
                 ", paid by {}",
                 purchase.who_paid(&self.accounts)
             )));
+            for (user, share) in purchase.benef_to_shares(&self.accounts) {
+                row = row.push(Text::new(format!(
+                    "User {} has a share of {}",
+                    user,
+                    rational_to_string(share, 2),
+                )));
+            }
             column = column.push(row);
         }
         if self.accounts.users().len() > 0 {
