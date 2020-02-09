@@ -104,6 +104,19 @@ impl Sandbox for Accounts {
             }
         }
         .err();
+
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            // save the current state in local storage
+            // FIXME remove unwraps
+            let window = web_sys::window().unwrap();
+            let storage = window.local_storage().unwrap().unwrap();
+            let serialized_accounts = serde_json::to_string(
+                &self.accounts.as_serializable()
+            ).unwrap();
+            storage.set_item("lastest_aacs", &serialized_accounts).unwrap();
+        }
     }
 
     fn view(&mut self) -> Element<Message> {
