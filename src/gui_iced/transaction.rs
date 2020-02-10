@@ -5,7 +5,7 @@ use iced::{text_input, Column, Element, Radio, Row, Text, TextInput};
 use num_rational::Rational64;
 
 use crate::accounts::ParsedPurchase;
-use crate::rational::rational_from_str;
+use crate::rational::{rational_from_str, rational_to_string};
 
 #[derive(Default, Clone)]
 pub struct Transaction {
@@ -27,6 +27,22 @@ pub enum Message {
 }
 
 impl Transaction {
+    pub fn new(purchase: &ParsedPurchase, users: &[String]) -> Self {
+        let shares = purchase
+            .shares()
+            .iter()
+            .map(|x| shares::Share::from_rat(*x))
+            .collect();
+        Self {
+            descr: purchase.descr.clone(),
+            uid: purchase.who_paid,
+            creditor: users[purchase.who_paid].clone(),
+            amount: rational_to_string(purchase.amount, 2),
+            shares: shares,
+            ..Default::default()
+        }
+    }
+
     pub fn update(
         &mut self,
         message: Message,
@@ -151,7 +167,7 @@ impl Transaction {
 
 mod shares {
 
-    use crate::rational::rational_from_str;
+    use crate::rational::{rational_from_str, rational_to_string};
     use iced::{text_input, Element, TextInput};
     use num_rational::Rational64;
 
@@ -168,6 +184,14 @@ mod shares {
     }
 
     impl Share {
+        pub fn from_rat(rat: Rational64) -> Self {
+            Self {
+                value: rational_to_string(rat, 2),
+                value_parsed: Some(rat),
+                ..Default::default()
+            }
+        }
+
         pub fn update(&mut self, message: Message) {
             match message {
                 Message::StrChange(share) => {

@@ -6,6 +6,7 @@ use iced::{
 };
 
 use crate::accounts::{ParseError, ParsedAccounts};
+use crate::local_storage;
 use crate::rational::rational_to_string;
 
 mod transaction;
@@ -37,11 +38,39 @@ enum Message {
     AddPurchase,
 }
 
+impl Accounts {
+    /// Construct the GUI from a JSON serialization
+    fn from_json(json: &str) -> Result<Self, ParseError> {
+        let accounts = ParsedAccounts::from_json(json)?;
+        let transactions = accounts
+            .purchases()
+            .iter()
+            .map(|purch| transaction::Transaction::new(purch, accounts.users()))
+            .collect();
+        Ok(Accounts {
+            accounts,
+            transactions,
+            ..Default::default()
+        })
+    }
+}
+
 impl Sandbox for Accounts {
     type Message = Message;
 
     fn new() -> Self {
-        Self::default()
+        #[cfg(target_arch = "wasm32")]
+        {
+            if let Some(latest) = local_storage::get_item("latest_aacs") {
+                Self::from_json(&latest).unwrap_or_else(|_| Self::default())
+            } else {
+                Self::default()
+            }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            Self::default()
+        }
     }
 
     fn title(&self) -> String {
@@ -105,17 +134,17 @@ impl Sandbox for Accounts {
         }
         .err();
 
-
         #[cfg(target_arch = "wasm32")]
         {
             // save the current state in local storage
-            // FIXME remove unwraps
-            let window = web_sys::window().unwrap();
-            let storage = window.local_storage().unwrap().unwrap();
-            let serialized_accounts = serde_json::to_string(
-                &self.accounts.as_serializable()
-            ).unwrap();
-            storage.set_item("lastest_aacs", &serialized_accounts).unwrap();
+            if self.last_error.is_none() {
+                let serialized_accounts: Result<String, ParseError> =
+                    serde_json::to_string(&self.accounts.as_serializable())
+                        .map_err(|e| e.into());
+                let res = serialized_accounts
+                    .map(|accs| local_storage::set_item("latest_aacs", &accs));
+                self.last_error = res.err();
+            }
         }
     }
 
