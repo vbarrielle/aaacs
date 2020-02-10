@@ -18,6 +18,7 @@ pub enum ParseError {
     UserHasData(String),
     InvalidPurchase(usize),
     InvalidUserId(usize),
+    JsonError(String),
 }
 
 impl std::fmt::Display for ParseError {
@@ -49,7 +50,16 @@ impl std::fmt::Display for ParseError {
             ParseError::InvalidUserId(index) => {
                 write!(f, "User id {} does not exist.", index,)
             }
+            ParseError::JsonError(err) => {
+                write!(f, "Json decode error: {}", err)
+            }
         }
+    }
+}
+
+impl From<serde_json::Error> for ParseError {
+    fn from(err: serde_json::Error) -> Self {
+        ParseError::JsonError(format!("{}", err))
     }
 }
 
@@ -142,6 +152,11 @@ pub struct ParsedAccounts {
 }
 
 impl ParsedAccounts {
+    /// Deserialize from json data
+    pub fn from_json(json: &str) -> Result<Self, ParseError> {
+        SerializedAccounts::parse(serde_json::from_str(json)?)
+    }
+
     /// Return the existing users
     pub fn users(&self) -> &[String] {
         &self.users[..]
