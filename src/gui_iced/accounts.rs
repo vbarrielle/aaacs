@@ -10,6 +10,7 @@ use crate::rational::rational_to_string;
 
 #[derive(Default)]
 pub struct Accounts {
+    title: String,
     accounts: ParsedAccounts,
     last_error: Option<ParseError>,
     new_user: String,
@@ -33,7 +34,7 @@ pub enum Message {
 
 impl Accounts {
     /// Construct the GUI from a JSON serialization
-    fn from_json(json: &str) -> Result<Self, ParseError> {
+    fn from_json(json: &str, title: String) -> Result<Self, ParseError> {
         let accounts = ParsedAccounts::from_json(json)?;
         let transactions = accounts
             .purchases()
@@ -41,24 +42,32 @@ impl Accounts {
             .map(|purch| transaction::Transaction::new(purch, accounts.users()))
             .collect();
         Ok(Accounts {
+            title,
             accounts,
             transactions,
             ..Default::default()
         })
     }
 
-    pub fn new() -> Self {
+    pub fn new(title: String) -> Self {
         #[cfg(target_arch = "wasm32")]
         {
             if let Some(latest) = local_storage::get_item("latest_aacs") {
-                Self::from_json(&latest).unwrap_or_else(|_| Self::default())
+                Self::from_json(&latest, title)
+                    .unwrap_or_else(|_| Self { ..Self::default() })
             } else {
-                Self::default()
+                Self {
+                    title,
+                    ..Self::default()
+                }
             }
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            Self::default()
+            Self {
+                title,
+                ..Self::default()
+            }
         }
     }
 
