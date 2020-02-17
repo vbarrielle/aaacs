@@ -30,7 +30,7 @@ impl Sandbox for Aaacs {
     fn new() -> Self {
         #[cfg(target_arch = "wasm32")]
         {
-            Aaacs::HomePage(Default::default())
+            Aaacs::HomePage(FileSelector::new())
         }
         #[cfg(not(target_arch = "wasm32"))]
         {

@@ -40,3 +40,17 @@ pub fn set_item(key: &str, value: &str) -> Result<(), JsValue> {
         storage().ok_or(JsValue::from_str(&"No local storage available"))?;
     stor.set_item(key, value)
 }
+
+/// Get the names of the saved accounts
+pub fn saved_accounts() -> impl Iterator<Item = String> {
+    let nb_keys = storage().map(|s| s.length().unwrap_or(0)).unwrap_or(0);
+    (0..nb_keys).filter_map(|i| {
+        let s = storage()?;
+        let key = s.key(i).ok()??;
+        if key.starts_with("aaacs:") {
+            key.split(":").last().map(str::to_string)
+        } else {
+            None
+        }
+    })
+}
