@@ -52,7 +52,8 @@ impl Accounts {
     pub fn new(title: String) -> Self {
         #[cfg(target_arch = "wasm32")]
         {
-            if let Some(latest) = local_storage::get_item("latest_aacs") {
+            let save_name = format!("aaacs:{}", title);
+            if let Some(latest) = local_storage::get_item(&save_name) {
                 Self::from_json(&latest, title)
                     .unwrap_or_else(|_| Self { ..Self::default() })
             } else {
@@ -135,8 +136,9 @@ impl Accounts {
                 let serialized_accounts: Result<String, ParseError> =
                     serde_json::to_string(&self.accounts.as_serializable())
                         .map_err(|e| e.into());
+                let save_name = format!("aaacs:{}", self.title);
                 let res = serialized_accounts
-                    .map(|accs| local_storage::set_item("latest_aacs", &accs));
+                    .map(|accs| local_storage::set_item(&save_name, &accs));
                 self.last_error = res.err();
             }
         }
