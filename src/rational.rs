@@ -84,8 +84,18 @@ pub fn rational_to_string(rat: Rational64, nb_max_decimals: u8) -> String {
             p = p / 10;
         }
         let integral_part = integral_part.to_integer();
+        // Sign detection works correctly above except in one case: when
+        // the integral part is 0, the sign gets lost as there is no
+        // negative 0 on integers (contrary to floats). This little hack
+        // detects and fixes this edge case
+        let leading_minus = if integral_part == 0 && rat < 0.into() {
+            "-"
+        } else {
+            ""
+        };
         format!(
-            "{integral_part}.{decimal_part:0width$}",
+            "{leading_minus}{integral_part}.{decimal_part:0width$}",
+            leading_minus = leading_minus,
             integral_part = integral_part,
             decimal_part = p,
             width = q as usize,
@@ -162,6 +172,13 @@ mod test {
                 nb_max_decimals
             ),
             &"3.4138",
+        );
+        assert_eq!(
+            &super::rational_to_string(
+                Rational64::new(-5, 100),
+                nb_max_decimals
+            ),
+            &"-0.05",
         );
     }
 }
