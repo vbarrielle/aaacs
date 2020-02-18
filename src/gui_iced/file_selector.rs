@@ -23,8 +23,11 @@ pub enum Message {
 impl FileSelector {
     pub fn new() -> Self {
         let mut existing = Vec::with_capacity(16);
-        for title in local_storage::saved_accounts() {
-            existing.push(existing_accounts::ExistingAccounts::new(title));
+        #[cfg(target_arch = "wasm32")]
+        {
+            for title in local_storage::saved_accounts() {
+                existing.push(existing_accounts::ExistingAccounts::new(title));
+            }
         }
         Self {
             existing,
