@@ -35,6 +35,10 @@ pub enum Message {
 }
 
 impl Accounts {
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
     /// Construct the GUI from a JSON serialization
     fn from_json(json: &str, title: String) -> Result<Self, ParseError> {
         let accounts = ParsedAccounts::from_json(json)?;

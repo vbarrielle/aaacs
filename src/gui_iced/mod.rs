@@ -7,6 +7,7 @@ mod file_selector;
 mod transaction;
 use file_selector::FileSelector;
 
+use crate::local_storage;
 use accounts::Accounts;
 
 pub fn run() {
@@ -30,7 +31,17 @@ impl Sandbox for Aaacs {
     fn new() -> Self {
         #[cfg(target_arch = "wasm32")]
         {
-            Aaacs::HomePage(FileSelector::new())
+            match local_storage::get_item("latest_state") {
+                Some(state) => {
+                    if let Some(title) = state.split(":").skip(1).take(1).next()
+                    {
+                        Aaacs::Editing(Accounts::new(title.to_string()))
+                    } else {
+                        Aaacs::HomePage(FileSelector::new())
+                    }
+                }
+                None => Aaacs::HomePage(FileSelector::new()),
+            }
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -60,6 +71,20 @@ impl Sandbox for Aaacs {
                     }
                 }
             }
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            // save the state
+            // FIXME warn if saving impossible
+            let save_res = match self {
+                Aaacs::HomePage(_) => {
+                    local_storage::set_item("latest_state", "homepage")
+                }
+                Aaacs::Editing(accounts) => local_storage::set_item(
+                    "latest_state",
+                    &format!("editing:{}", accounts.title()),
+                ),
+            };
         }
     }
 
