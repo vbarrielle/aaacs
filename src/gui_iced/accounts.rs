@@ -19,6 +19,7 @@ pub struct Accounts {
     transactions: Vec<transaction::Transaction>,
     new_purchase_btn_state: button::State,
     new_transaction: transaction::Transaction,
+    go_home_btn_state: button::State,
     #[cfg(feature = "debug")]
     latest_message: Option<Message>,
 }
@@ -30,6 +31,7 @@ pub enum Message {
     TransactionChange(usize, transaction::Message),
     AddUser,
     AddPurchase,
+    GoHome,
 }
 
 impl Accounts {
@@ -126,6 +128,13 @@ impl Accounts {
                     Err(err) => Err(err),
                 }
             }
+            Message::GoHome => {
+                Err(
+                    ParseError::InvalidState(
+                        "Accounts should not handle GoHome".to_string()
+                    )
+                )
+            }
         }
         .err();
 
@@ -146,6 +155,16 @@ impl Accounts {
 
     pub fn view(&mut self) -> Element<Message> {
         let mut column = Column::new().padding(20).spacing(10);
+        column = column.push(
+            Button::new(
+                &mut self.go_home_btn_state,
+                Text::new("Home"),
+            )
+            .background(iced::Background::Color([0., 0.8, 0.8].into()))
+            .border_radius(5)
+            .padding(2)
+            .on_press(Message::GoHome),
+        );
         let mut users_row = Row::new().spacing(20);
         users_row = users_row
             .push(Text::new(format!("{} users:", self.accounts.users().len())));

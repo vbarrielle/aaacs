@@ -44,6 +44,9 @@ impl Sandbox for Aaacs {
 
     fn update(&mut self, message: Message) {
         match message {
+            Message::Editing(accounts::Message::GoHome) => {
+                *self = Aaacs::HomePage(FileSelector::new());
+            }
             Message::Editing(msg) => {
                 if let Aaacs::Editing(accounts) = self {
                     accounts.update(msg);

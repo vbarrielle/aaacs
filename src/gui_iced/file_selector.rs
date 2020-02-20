@@ -1,6 +1,6 @@
 //! A file selector for local storage
 
-use iced::{button, text_input, Button, Column, Element, Row, Text, TextInput};
+use iced::{button, text_input, Button, Column, Element, Text, TextInput};
 
 #[cfg(target_arch = "wasm32")]
 use crate::local_storage;

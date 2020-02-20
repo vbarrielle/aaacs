@@ -19,6 +19,7 @@ pub enum ParseError {
     InvalidPurchase(usize),
     InvalidUserId(usize),
     JsonError(String),
+    InvalidState(String),
 }
 
 impl std::fmt::Display for ParseError {
@@ -52,6 +53,9 @@ impl std::fmt::Display for ParseError {
             }
             ParseError::JsonError(err) => {
                 write!(f, "Json decode error: {}", err)
+            }
+            ParseError::InvalidState(err) => {
+                write!(f, "App has reached and invalid state: {}", err)
             }
         }
     }
