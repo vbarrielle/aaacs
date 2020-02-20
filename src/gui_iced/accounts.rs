@@ -225,6 +225,9 @@ impl Accounts {
                         &mut self.new_purchase_btn_state,
                         Text::new("Add transaction"),
                     )
+                    .background(iced::Background::Color([0., 0.8, 0.8].into()))
+                    .border_radius(5)
+                    .padding(2)
                     .on_press(Message::AddPurchase),
                 );
             }
