@@ -7,6 +7,7 @@ mod file_selector;
 mod transaction;
 use file_selector::FileSelector;
 
+#[cfg(target_arch = "wasm32")]
 use crate::local_storage;
 use accounts::Accounts;
 
