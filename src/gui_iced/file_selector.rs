@@ -3,6 +3,9 @@
 use iced::{button, text_input, Button, Column, Element, Text, TextInput};
 
 #[cfg(target_arch = "wasm32")]
+use web_sys::{Url, Blob, BlobPropertyBag};
+
+#[cfg(target_arch = "wasm32")]
 use crate::local_storage;
 
 #[derive(Default)]
@@ -71,6 +74,25 @@ impl FileSelector {
         for (idx, existing) in self.existing.iter_mut().enumerate() {
             column = column
                 .push(existing.view().map(move |_| Message::OpenAccounts(idx)));
+            #[cfg(target_arch = "wasm32")]
+            {
+                let toto = wasm_bindgen::JsValue::from_serde(
+                    "some text data".as_bytes()
+                ).unwrap();
+                let mut options = BlobPropertyBag::new();
+                options.type_("text/plain");
+                let blob = Blob::new_with_u8_array_sequence_and_options(
+                    &toto, &options,
+                ).unwrap();
+                let url = Url::create_object_url_with_blob(&blob)
+                    .unwrap_or("failed to create url".to_string());
+                // TODO build a custom widget (implement Widget) to
+                // have an element able to display a <a> tag
+                column = column.push(Text::new(&format!(
+                    r#"<a id="download_link" download="my_exported_file.txt" href=”{}” >Download as Text File</a>"#,
+                    url,
+                )));
+            }
         }
         column.into()
     }
