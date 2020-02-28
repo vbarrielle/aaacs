@@ -1,11 +1,10 @@
-
-use iced_web::{Widget, style, Bus};
 use dodrio::bumpalo;
+use iced_web::{style, Bus, Element, Widget};
 
-struct UrlA {
-    text: String,
-    href: String,
-    download: String,
+pub struct UrlA {
+    pub text: String,
+    pub href: String,
+    pub download: String,
 }
 
 impl<Message> Widget<Message> for UrlA {
@@ -13,9 +12,8 @@ impl<Message> Widget<Message> for UrlA {
         &self,
         bump: &'b bumpalo::Bump,
         _bus: &Bus<Message>,
-        style_sheet: &mut style::Sheet<'b>,
-    ) -> dodrio::Node<'b>
-    {
+        _style_sheet: &mut style::Sheet<'b>,
+    ) -> dodrio::Node<'b> {
         use dodrio::builder::*;
         let download = bumpalo::format!(in bump, "{}", self.download);
         let href = bumpalo::format!(in bump, "{}", self.href);
@@ -25,5 +23,11 @@ impl<Message> Widget<Message> for UrlA {
             .attr("href", href.into_bump_str())
             .children([text(text_.into_bump_str())])
             .finish()
+    }
+}
+
+impl<'a, Message> From<UrlA> for Element<'a, Message> {
+    fn from(url: UrlA) -> Element<'a, Message> {
+        Element::new(url)
     }
 }
