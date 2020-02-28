@@ -42,13 +42,15 @@ pub fn set_item(key: &str, value: &str) -> Result<(), JsValue> {
 }
 
 /// Get the names of the saved accounts
-pub fn saved_accounts() -> impl Iterator<Item = String> {
+pub fn saved_accounts() -> impl Iterator<Item = (String, String)> {
     let nb_keys = storage().map(|s| s.length().unwrap_or(0)).unwrap_or(0);
     (0..nb_keys).filter_map(|i| {
         let s = storage()?;
         let key = s.key(i).ok()??;
         if key.starts_with("aaacs:") {
-            key.split(":").last().map(str::to_string)
+            let title = key.split(":").last().map(str::to_string)?;
+            let json = get_item(&key)?;
+            Some((title, json))
         } else {
             None
         }

@@ -3,9 +3,6 @@
 use iced::{button, text_input, Button, Column, Element, Text, TextInput};
 
 #[cfg(target_arch = "wasm32")]
-use web_sys::{Url, Blob, BlobPropertyBag};
-
-#[cfg(target_arch = "wasm32")]
 use crate::local_storage;
 
 #[derive(Default)]
@@ -28,8 +25,10 @@ impl FileSelector {
         let mut existing = Vec::with_capacity(16);
         #[cfg(target_arch = "wasm32")]
         {
-            for title in local_storage::saved_accounts() {
-                existing.push(existing_accounts::ExistingAccounts::new(title));
+            for (title, json) in local_storage::saved_accounts() {
+                existing.push(existing_accounts::ExistingAccounts::new(
+                    title, &json,
+                ));
             }
         }
         Self {
@@ -74,25 +73,6 @@ impl FileSelector {
         for (idx, existing) in self.existing.iter_mut().enumerate() {
             column = column
                 .push(existing.view().map(move |_| Message::OpenAccounts(idx)));
-            #[cfg(target_arch = "wasm32")]
-            {
-                let toto = wasm_bindgen::JsValue::from_serde(
-                    "some text data".as_bytes()
-                ).unwrap();
-                let mut options = BlobPropertyBag::new();
-                options.type_("text/plain");
-                let blob = Blob::new_with_u8_array_sequence_and_options(
-                    &toto, &options,
-                ).unwrap();
-                let url = Url::create_object_url_with_blob(&blob)
-                    .unwrap_or("failed to create url".to_string());
-                // TODO build a custom widget (implement Widget) to
-                // have an element able to display a <a> tag
-                column = column.push(Text::new(&format!(
-                    r#"<a id="download_link" download="my_exported_file.txt" href=”{}” >Download as Text File</a>"#,
-                    url,
-                )));
-            }
         }
         column.into()
     }
@@ -100,11 +80,14 @@ impl FileSelector {
 
 mod existing_accounts {
 
+    #[cfg(target_arch = "wasm32")]
+    use crate::gui_iced::url::UrlA;
     use iced::{button, Button, Element, Row, Text};
 
     #[derive(Default)]
     pub struct ExistingAccounts {
         title: String,
+        json_b64: String,
         open_button_state: button::State,
     }
 
@@ -114,9 +97,10 @@ mod existing_accounts {
     }
 
     impl ExistingAccounts {
-        pub fn new(title: String) -> Self {
+        pub fn new(title: String, json: &str) -> Self {
             Self {
                 title,
+                json_b64: data_encoding::BASE64.encode(json.as_bytes()),
                 ..Default::default()
             }
         }
@@ -126,10 +110,8 @@ mod existing_accounts {
         }
 
         pub fn view(&mut self) -> Element<Message> {
-            Row::new()
-                .spacing(10)
-                .push(Text::new(&self.title))
-                .push(
+            let mut row =
+                Row::new().spacing(10).push(Text::new(&self.title)).push(
                     Button::new(&mut self.open_button_state, Text::new("Open"))
                         .background(iced::Background::Color(
                             [0., 0.8, 0.8].into(),
@@ -137,8 +119,16 @@ mod existing_accounts {
                         .border_radius(5)
                         .padding(2)
                         .on_press(Message::Selected),
-                )
-                .into()
+                );
+            #[cfg(target_arch = "wasm32")]
+            {
+                row = row.push(UrlA {
+                    text: "Download json".to_string(),
+                    href: format!("data:text/plain;base64,{}", self.json_b64),
+                    download: format!("{}.json", self.title),
+                });
+            }
+            row.into()
         }
     }
 }
