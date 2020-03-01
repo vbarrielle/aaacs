@@ -8,6 +8,8 @@ mod transaction;
 use file_selector::FileSelector;
 
 #[cfg(target_arch = "wasm32")]
+mod file_input;
+#[cfg(target_arch = "wasm32")]
 mod url;
 
 #[cfg(target_arch = "wasm32")]

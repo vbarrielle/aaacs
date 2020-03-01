@@ -1,7 +1,9 @@
 //! A file selector for local storage
 
-use iced::{button, text_input, Button, Column, Element, Text, TextInput};
+use iced::{button, text_input, Button, Column, Element, Row, Text, TextInput};
 
+#[cfg(target_arch = "wasm32")]
+use crate::gui_iced::file_input::FileInput;
 #[cfg(target_arch = "wasm32")]
 use crate::local_storage;
 
@@ -10,6 +12,7 @@ pub struct FileSelector {
     new_accounts: String,
     new_accounts_state: text_input::State,
     new_accounts_btn_state: button::State,
+    upload_accounts_btn_state: button::State,
     existing: Vec<existing_accounts::ExistingAccounts>,
 }
 
@@ -18,6 +21,7 @@ pub enum Message {
     NewAccountsStrChange(String),
     OpenAccounts(usize),
     CreateAccounts,
+    UploadAccounts,
 }
 
 impl FileSelector {
@@ -45,6 +49,9 @@ impl FileSelector {
                 None
             }
             Message::OpenAccounts(i) => Some(&self.existing[i].title()),
+            Message::UploadAccounts => {
+                None // TODO: upload in local storage and return title
+            }
         }
     }
 
@@ -69,6 +76,26 @@ impl FileSelector {
             .padding(2)
             .on_press(Message::CreateAccounts),
         );
+        #[cfg(target_arch = "wasm32")]
+        {
+            let mut row = Row::new().spacing(10);
+            row = row.push(Text::new("Upload accounts:"));
+            row = row.push(FileInput {
+                accept: ".json".to_string(),
+                id: "upload_json".to_string(),
+            });
+            row = row.push(
+                Button::new(
+                    &mut self.upload_accounts_btn_state,
+                    Text::new("Upload"),
+                )
+                .background(iced::Background::Color([0., 0.8, 0.8].into()))
+                .border_radius(5)
+                .padding(2)
+                .on_press(Message::UploadAccounts),
+            );
+            column = column.push(row);
+        }
         column = column.push(Text::new("Latest accounts:"));
         for (idx, existing) in self.existing.iter_mut().enumerate() {
             column = column
