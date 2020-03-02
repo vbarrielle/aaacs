@@ -1,17 +1,24 @@
 //! A file selector for local storage
 
-use iced::{button, text_input, Button, Column, Element, Row, Text, TextInput};
+#[cfg(target_arch = "wasm32")]
+use iced::Row;
+use iced::{button, text_input, Button, Column, Element, Text, TextInput};
 
 #[cfg(target_arch = "wasm32")]
 use crate::gui_iced::file_input::FileInput;
 #[cfg(target_arch = "wasm32")]
 use crate::local_storage;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::{closure::Closure, JsCast, JsValue};
+#[cfg(target_arch = "wasm32")]
+use web_sys::console;
 
 #[derive(Default)]
 pub struct FileSelector {
     new_accounts: String,
     new_accounts_state: text_input::State,
     new_accounts_btn_state: button::State,
+    #[cfg(target_arch = "wasm32")]
     upload_accounts_btn_state: button::State,
     existing: Vec<existing_accounts::ExistingAccounts>,
 }
@@ -21,6 +28,7 @@ pub enum Message {
     NewAccountsStrChange(String),
     OpenAccounts(usize),
     CreateAccounts,
+    #[cfg(target_arch = "wasm32")]
     UploadAccounts,
 }
 
@@ -49,7 +57,44 @@ impl FileSelector {
                 None
             }
             Message::OpenAccounts(i) => Some(&self.existing[i].title()),
+            #[cfg(target_arch = "wasm32")]
             Message::UploadAccounts => {
+                let document = web_sys::window()?.document()?;
+                let elem = document.get_element_by_id("upload_json")?;
+                // FIXME errors should be displayed ?
+                let input: &web_sys::HtmlInputElement = elem.dyn_ref()?;
+                let file = input.files()?.item(0)?;
+                let name = file.name();
+                let file_reader = web_sys::FileReader::new().ok()?;
+                let store_in_local_storage = Closure::wrap(Box::new(
+                    move |e: web_sys::Event| {
+                        let event_tgt = e.target().ok_or(JsValue::NULL)?;
+                        let reader: &web_sys::FileReader =
+                            event_tgt.dyn_ref().ok_or(JsValue::NULL)?;
+                        let result = reader.result()?;
+                        let result = result.as_string().ok_or(JsValue::NULL)?;
+                        // path less name so this works
+                        let name =
+                            &name[..name.rfind(".").unwrap_or(name.len())];
+                        local_storage::set_item(
+                            &format!("aaacs:{}", name),
+                            &result,
+                        )?;
+                        console::log_1(
+                            &format!(
+                                "Load accounts '{}'. Refresh necessary (for now)",
+                                name,
+                            ).into()
+                        );
+                        Ok(())
+                    },
+                )
+                    as Box<dyn FnMut(web_sys::Event) -> Result<(), JsValue>>);
+                file_reader
+                    .set_onload(store_in_local_storage.as_ref().dyn_ref());
+                // do not let rust destroy the closure
+                store_in_local_storage.forget();
+                file_reader.read_as_text(&file).ok()?;
                 None // TODO: upload in local storage and return title
             }
         }

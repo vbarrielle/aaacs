@@ -27,7 +27,7 @@ dodrio = "0.1.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.web-sys]
 version = "0.3"
-features = ["Storage", "Window", "Document"]
+features = ["Storage", "Window", "Document", "FileReader", "Blob", "HtmlInputElement", "FileList", "File", "Event", "console"]
 
 ["features"]
 
