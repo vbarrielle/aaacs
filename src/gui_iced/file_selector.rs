@@ -185,6 +185,7 @@ mod existing_accounts {
         }
 
         pub fn view(&mut self) -> Element<Message> {
+            #[allow(unused_mut)] // mut in wasm
             let mut row =
                 Row::new().spacing(10).push(Text::new(&self.title)).push(
                     Button::new(&mut self.open_button_state, Text::new("Open"))
