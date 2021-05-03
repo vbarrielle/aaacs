@@ -1,5 +1,5 @@
 use dodrio::bumpalo;
-use iced_web::{style, Bus, Element, Widget};
+use iced_web::{Bus, Css, Element, Widget};
 
 pub struct UrlA {
     pub text: String,
@@ -12,7 +12,7 @@ impl<Message> Widget<Message> for UrlA {
         &self,
         bump: &'b bumpalo::Bump,
         _bus: &Bus<Message>,
-        _style_sheet: &mut style::Sheet<'b>,
+        _style_sheet: &mut Css<'b>,
     ) -> dodrio::Node<'b> {
         use dodrio::builder::*;
         let download = bumpalo::format!(in bump, "{}", self.download);

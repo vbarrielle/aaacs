@@ -11,6 +11,7 @@ use crate::rational::rational_to_string;
 
 #[derive(Default)]
 pub struct Accounts {
+    #[cfg(target_arch = "wasm32")]
     title: String,
     accounts: ParsedAccounts,
     last_error: Option<ParseError>,
@@ -36,11 +37,13 @@ pub enum Message {
 }
 
 impl Accounts {
+    #[cfg(target_arch = "wasm32")]
     pub fn title(&self) -> &str {
         &self.title
     }
 
     /// Construct the GUI from a JSON serialization
+    #[cfg(target_arch = "wasm32")]
     fn from_json(json: &str, title: String) -> Result<Self, ParseError> {
         let accounts = ParsedAccounts::from_json(json)?;
         let transactions = accounts
@@ -72,10 +75,8 @@ impl Accounts {
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            Self {
-                title,
-                ..Self::default()
-            }
+            let _ = title;
+            Self::default()
         }
     }
 

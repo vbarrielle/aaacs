@@ -18,7 +18,7 @@ use crate::local_storage;
 use accounts::Accounts;
 
 pub fn run() {
-    Aaacs::run(Settings::default());
+    Aaacs::run(Settings::default()).expect("Error while running aaacs");
 }
 
 enum Aaacs {

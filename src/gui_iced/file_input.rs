@@ -1,5 +1,5 @@
 use dodrio::bumpalo;
-use iced_web::{style, Bus, Element, Widget};
+use iced_web::{Bus, Css, Element, Widget};
 
 pub struct FileInput {
     pub accept: String,
@@ -11,7 +11,7 @@ impl<Message> Widget<Message> for FileInput {
         &self,
         bump: &'b bumpalo::Bump,
         _bus: &Bus<Message>,
-        _style_sheet: &mut style::Sheet<'b>,
+        _style_sheet: &mut Css<'b>,
     ) -> dodrio::Node<'b> {
         use dodrio::builder::*;
         let type_ = bumpalo::format!(in bump, "{}", "file");

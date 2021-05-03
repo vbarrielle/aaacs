@@ -111,19 +111,26 @@ impl Transaction {
         }
         Row::new()
             .spacing(10)
-            .push(TextInput::new(
-                &mut self.descr_state,
-                "Transaction name",
-                &self.descr,
-                Message::DescrStrChange,
-            ))
+            .padding(10)
+            .push(
+                TextInput::new(
+                    &mut self.descr_state,
+                    "Transaction name",
+                    &self.descr,
+                    Message::DescrStrChange,
+                )
+                .padding(20),
+            )
             .push(user_choice)
-            .push(TextInput::new(
-                &mut self.amount_state,
-                "Amount",
-                &self.amount,
-                Message::AmountStrChange,
-            ))
+            .push(
+                TextInput::new(
+                    &mut self.amount_state,
+                    "Amount",
+                    &self.amount,
+                    Message::AmountStrChange,
+                )
+                .padding(20),
+            )
             .push(shares_col)
             .into()
     }

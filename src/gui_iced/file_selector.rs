@@ -35,6 +35,7 @@ pub enum Message {
 
 impl FileSelector {
     pub fn new() -> Self {
+        #[allow(unused_mut)] // mut in wasm
         let mut existing = Vec::with_capacity(16);
         #[cfg(target_arch = "wasm32")]
         {
@@ -159,6 +160,7 @@ mod existing_accounts {
     #[derive(Default)]
     pub struct ExistingAccounts {
         title: String,
+        #[cfg(target_arch = "wasm32")]
         json_b64: String,
         open_button_state: button::State,
     }
@@ -169,6 +171,7 @@ mod existing_accounts {
     }
 
     impl ExistingAccounts {
+        #[cfg(target_arch = "wasm32")]
         pub fn new(title: String, json: &str) -> Self {
             Self {
                 title,
