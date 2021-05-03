@@ -6,6 +6,7 @@ use iced::{button, text_input, Button, Column, Element, Text, TextInput};
 
 #[cfg(target_arch = "wasm32")]
 use crate::gui_iced::file_input::FileInput;
+use crate::gui_iced::style;
 #[cfg(target_arch = "wasm32")]
 use crate::local_storage;
 #[cfg(target_arch = "wasm32")]
@@ -116,8 +117,7 @@ impl FileSelector {
                 &mut self.new_accounts_btn_state,
                 Text::new("Create accounts"),
             )
-            .background(iced::Background::Color([0., 0.8, 0.8].into()))
-            .border_radius(5)
+            .style(style::Button)
             .padding(2)
             .on_press(Message::CreateAccounts),
         );
@@ -134,8 +134,7 @@ impl FileSelector {
                     &mut self.upload_accounts_btn_state,
                     Text::new("Upload"),
                 )
-                .background(iced::Background::Color([0., 0.8, 0.8].into()))
-                .border_radius(5)
+                .style(style::Button)
                 .padding(2)
                 .on_press(Message::UploadAccounts),
             );
@@ -152,6 +151,7 @@ impl FileSelector {
 
 mod existing_accounts {
 
+    use crate::gui_iced::style;
     #[cfg(target_arch = "wasm32")]
     use crate::gui_iced::url::UrlA;
     use iced::{button, Button, Element, Row, Text};
@@ -185,10 +185,7 @@ mod existing_accounts {
             let mut row =
                 Row::new().spacing(10).push(Text::new(&self.title)).push(
                     Button::new(&mut self.open_button_state, Text::new("Open"))
-                        .background(iced::Background::Color(
-                            [0., 0.8, 0.8].into(),
-                        ))
-                        .border_radius(5)
+                        .style(style::Button)
                         .padding(2)
                         .on_press(Message::Selected),
                 );

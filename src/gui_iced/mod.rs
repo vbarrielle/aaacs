@@ -4,6 +4,7 @@ use iced::{Element, Sandbox, Settings};
 
 mod accounts;
 mod file_selector;
+mod style;
 mod transaction;
 use file_selector::FileSelector;
 

@@ -3,6 +3,7 @@
 use iced::{button, text_input, Button, Column, Element, Row, Text, TextInput};
 
 use crate::accounts::{ParseError, ParsedAccounts};
+use crate::gui_iced::style;
 use crate::gui_iced::transaction;
 #[cfg(target_arch = "wasm32")]
 use crate::local_storage;
@@ -157,8 +158,7 @@ impl Accounts {
         let mut column = Column::new().padding(20).spacing(10);
         column = column.push(
             Button::new(&mut self.go_home_btn_state, Text::new("Home"))
-                .background(iced::Background::Color([0., 0.8, 0.8].into()))
-                .border_radius(5)
+                .style(style::Button)
                 .padding(2)
                 .on_press(Message::GoHome),
         );
@@ -189,8 +189,7 @@ impl Accounts {
                         &mut self.new_user_btn_state,
                         Text::new("Add user"),
                     )
-                    .background(iced::Background::Color([0., 0.8, 0.8].into()))
-                    .border_radius(5)
+                    .style(style::Button)
                     .padding(2)
                     .on_press(Message::AddUser),
                 ),
@@ -225,8 +224,7 @@ impl Accounts {
                         &mut self.new_purchase_btn_state,
                         Text::new("Add transaction"),
                     )
-                    .background(iced::Background::Color([0., 0.8, 0.8].into()))
-                    .border_radius(5)
+                    .style(style::Button)
                     .padding(2)
                     .on_press(Message::AddPurchase),
                 );
