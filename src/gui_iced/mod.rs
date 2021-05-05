@@ -62,6 +62,7 @@ impl Sandbox for Aaacs {
 
     fn update(&mut self, message: Message) {
         match message {
+            #[cfg(target_arch = "wasm32")]
             Message::Editing(accounts::Message::GoHome) => {
                 *self = Aaacs::HomePage(FileSelector::new());
             }

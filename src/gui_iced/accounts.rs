@@ -21,6 +21,7 @@ pub struct Accounts {
     transactions: Vec<transaction::Transaction>,
     new_purchase_btn_state: button::State,
     new_transaction: transaction::Transaction,
+    #[cfg(target_arch = "wasm32")]
     go_home_btn_state: button::State,
     #[cfg(feature = "debug")]
     latest_message: Option<Message>,
@@ -33,6 +34,7 @@ pub enum Message {
     TransactionChange(usize, transaction::Message),
     AddUser,
     AddPurchase,
+    #[cfg(target_arch = "wasm32")]
     GoHome,
 }
 
@@ -134,6 +136,7 @@ impl Accounts {
                     Err(err) => Err(err),
                 }
             }
+            #[cfg(target_arch = "wasm32")]
             Message::GoHome => Err(ParseError::InvalidState(
                 "Accounts should not handle GoHome".to_string(),
             )),
@@ -157,12 +160,15 @@ impl Accounts {
 
     pub fn view(&mut self) -> Element<Message> {
         let mut column = Column::new().padding(20).spacing(10);
-        column = column.push(
-            Button::new(&mut self.go_home_btn_state, Text::new("Home"))
-                .style(style::Button)
-                .padding(2)
-                .on_press(Message::GoHome),
-        );
+        #[cfg(target_arch = "wasm32")]
+        {
+            column = column.push(
+                Button::new(&mut self.go_home_btn_state, Text::new("Home"))
+                    .style(style::Button)
+                    .padding(2)
+                    .on_press(Message::GoHome),
+            );
+        }
         let mut users_row = Row::new().spacing(20);
         users_row = users_row
             .push(Text::new(format!("{} users:", self.accounts.users().len())));
