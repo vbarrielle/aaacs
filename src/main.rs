@@ -2,19 +2,44 @@ use std::error::Error;
 
 use aaacs::accounts::ParsedAccounts;
 use aaacs::gui_iced;
+use structopt::StructOpt;
+
+/// Automated Accurate Accounting Collaborative System
+///
+/// A simple application to handle accounts between friends
+#[derive(StructOpt, Debug)]
+#[structopt(name = "aaacs")]
+struct Args {
+    /// If present on the command line, only compute the reports of the
+    /// passed files.
+    #[structopt(long)]
+    cli: bool,
+
+    /// Number of decimal points to print
+    #[structopt(long, default_value = "2")]
+    precision: u8,
+
+    /// Files to process
+    #[structopt(name = "FILE", parse(from_os_str))]
+    files: Vec<std::path::PathBuf>,
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut args = std::env::args();
-    let _prog_name = args.next();
-    for accounts_path in args {
-        println!("Processing accounts for {}:", accounts_path);
+    let args = Args::from_args();
+    if args.cli {
+        for accounts_path in args.files {
+            println!(
+                "Processing accounts for {}:",
+                accounts_path.to_string_lossy()
+            );
 
-        let accounts_file = std::fs::File::open(&accounts_path)?;
-        let accounts = ParsedAccounts::from_yaml_reader(accounts_file)?;
-        accounts.print_balances(2);
+            let accounts_file = std::fs::File::open(&accounts_path)?;
+            let accounts = ParsedAccounts::from_yaml_reader(accounts_file)?;
+            accounts.print_balances(args.precision);
+        }
+    } else {
+        gui_iced::run();
     }
-
-    gui_iced::run();
 
     Ok(())
 }

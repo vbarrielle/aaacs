@@ -171,7 +171,9 @@ impl ParsedAccounts {
         SerializedAccounts::parse(serde_json::from_str(json)?)
     }
 
-    pub fn from_yaml_reader<R: std::io::Read>(yaml: R) -> Result<Self, ParseError> {
+    pub fn from_yaml_reader<R: std::io::Read>(
+        yaml: R,
+    ) -> Result<Self, ParseError> {
         SerializedAccounts::parse(serde_yaml::from_reader(yaml)?)
     }
 
