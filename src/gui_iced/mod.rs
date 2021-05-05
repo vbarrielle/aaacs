@@ -1,6 +1,8 @@
 //! GUI based on the `iced` library.
 
-use iced::{Element, Sandbox, Settings};
+use iced::{Application, Clipboard, Command, Element, Settings, Text};
+
+use std::path::PathBuf;
 
 mod accounts;
 mod file_selector;
@@ -17,13 +19,18 @@ mod url;
 use crate::local_storage;
 use accounts::Accounts;
 
-pub fn run() {
-    Aaacs::run(Settings::default()).expect("Error while running aaacs");
+pub fn run(file: Option<PathBuf>) {
+    Aaacs::run(Settings {
+        flags: AppFlags { file },
+        ..Settings::default()
+    })
+    .expect("Error while running aaacs");
 }
 
 enum Aaacs {
     HomePage(FileSelector),
     Editing(Accounts),
+    FatalError(String),
 }
 
 #[derive(Debug, Clone)]
@@ -32,35 +39,80 @@ enum Message {
     Editing(accounts::Message),
 }
 
-impl Sandbox for Aaacs {
-    type Message = Message;
+#[derive(Default)]
+pub struct AppFlags {
+    file: Option<std::path::PathBuf>,
+}
 
-    fn new() -> Self {
+impl Application for Aaacs {
+    type Message = Message;
+    type Executor = iced::executor::Default;
+    type Flags = AppFlags;
+
+    fn new(flags: AppFlags) -> (Self, Command<Self::Message>) {
         #[cfg(target_arch = "wasm32")]
         {
+            let _ = flags;
             match local_storage::get_item("latest_state") {
                 Some(state) => {
                     if let Some(title) = state.split(":").skip(1).take(1).next()
                     {
-                        Aaacs::Editing(Accounts::new(title.to_string()))
+                        (
+                            Aaacs::Editing(Accounts::new(title.to_string())),
+                            Command::none(),
+                        )
                     } else {
-                        Aaacs::HomePage(FileSelector::new())
+                        (Aaacs::HomePage(FileSelector::new()), Command::none())
                     }
                 }
-                None => Aaacs::HomePage(FileSelector::new()),
+                None => (Aaacs::HomePage(FileSelector::new()), Command::none()),
             }
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            Aaacs::Editing(Default::default())
+            if let Some(path) = flags.file {
+                let accounts_file = std::fs::File::open(&path);
+                match accounts_file {
+                    Ok(accounts_file) => {
+                        let accounts = Accounts::from_yaml_path_and_reader(
+                            path.clone(),
+                            accounts_file,
+                        );
+                        match accounts {
+                            Ok(accounts) => {
+                                (Aaacs::Editing(accounts), Command::none())
+                            }
+                            Err(err) => (
+                                Aaacs::FatalError(format!(
+                                    "Could not parse yaml file {:?}: {:?}",
+                                    path, err,
+                                )),
+                                Command::none(),
+                            ),
+                        }
+                    }
+                    Err(_err) => {
+                        // TODO need to fill-in the path and maybe check more
+                        // the error, in some case an I/O error is a fatal
+                        // error (eg permission denied)
+                        (Aaacs::Editing(Default::default()), Command::none())
+                    }
+                }
+            } else {
+                (Aaacs::Editing(Default::default()), Command::none())
+            }
         }
     }
 
     fn title(&self) -> String {
-        String::from("aacs")
+        "aaacs".into()
     }
 
-    fn update(&mut self, message: Message) {
+    fn update(
+        &mut self,
+        message: Message,
+        _clipboard: &mut Clipboard,
+    ) -> Command<Self::Message> {
         match message {
             #[cfg(target_arch = "wasm32")]
             Message::Editing(accounts::Message::GoHome) => {
@@ -92,8 +144,10 @@ impl Sandbox for Aaacs {
                     "latest_state",
                     &format!("editing:{}", accounts.title()),
                 ),
+                Aaacs::FatalError(_) => Ok(()),
             };
         }
+        Command::none()
     }
 
     fn view(&mut self) -> Element<Message> {
@@ -103,6 +157,11 @@ impl Sandbox for Aaacs {
             }
             Aaacs::Editing(accounts) => {
                 accounts.view().map(|msg| Message::Editing(msg))
+            }
+            Aaacs::FatalError(error) => {
+                Text::new(format!("Fatal error: {}", error))
+                    .color([1.0, 0., 0.])
+                    .into()
             }
         }
     }

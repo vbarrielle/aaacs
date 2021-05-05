@@ -37,8 +37,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             let accounts = ParsedAccounts::from_yaml_reader(accounts_file)?;
             accounts.print_balances(args.precision);
         }
+    } else if args.files.len() == 0 {
+        gui_iced::run(None);
+    } else if args.files.len() == 1 {
+        gui_iced::run(Some(args.files[0].clone()));
     } else {
-        gui_iced::run();
+        println!("Cannot process more than one file in GUI mode");
+        return Err("Invalid args".into());
     }
 
     Ok(())

@@ -2,6 +2,9 @@
 
 use iced::{button, text_input, Button, Column, Element, Row, Text, TextInput};
 
+use std::io::Read;
+use std::path::PathBuf;
+
 use crate::accounts::{ParseError, ParsedAccounts};
 use crate::gui_iced::style;
 use crate::gui_iced::transaction;
@@ -13,6 +16,8 @@ use crate::rational::rational_to_string;
 pub struct Accounts {
     #[cfg(target_arch = "wasm32")]
     title: String,
+    #[cfg(not(target_arch = "wasm32"))]
+    path: PathBuf,
     accounts: ParsedAccounts,
     last_error: Option<ParseError>,
     new_user: String,
@@ -55,6 +60,25 @@ impl Accounts {
             .collect();
         Ok(Accounts {
             title,
+            accounts,
+            transactions,
+            ..Default::default()
+        })
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn from_yaml_path_and_reader<R: Read>(
+        yaml_path: PathBuf,
+        yaml_reader: R,
+    ) -> Result<Self, ParseError> {
+        let accounts = ParsedAccounts::from_yaml_reader(yaml_reader)?;
+        let transactions = accounts
+            .purchases()
+            .iter()
+            .map(|purch| transaction::Transaction::new(purch, accounts.users()))
+            .collect();
+        Ok(Accounts {
+            path: yaml_path,
             accounts,
             transactions,
             ..Default::default()
