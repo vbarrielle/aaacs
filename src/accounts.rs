@@ -19,6 +19,7 @@ pub enum ParseError {
     InvalidPurchase(usize),
     InvalidUserId(usize),
     JsonError(String),
+    YamlError(String),
     InvalidState(String),
 }
 
@@ -54,6 +55,9 @@ impl std::fmt::Display for ParseError {
             ParseError::JsonError(err) => {
                 write!(f, "Json decode error: {}", err)
             }
+            ParseError::YamlError(err) => {
+                write!(f, "Yaml decode error: {}", err)
+            }
             ParseError::InvalidState(err) => {
                 write!(f, "App has reached and invalid state: {}", err)
             }
@@ -64,6 +68,12 @@ impl std::fmt::Display for ParseError {
 impl From<serde_json::Error> for ParseError {
     fn from(err: serde_json::Error) -> Self {
         ParseError::JsonError(format!("{}", err))
+    }
+}
+
+impl From<serde_yaml::Error> for ParseError {
+    fn from(err: serde_yaml::Error) -> Self {
+        ParseError::YamlError(format!("{}", err))
     }
 }
 
@@ -159,6 +169,10 @@ impl ParsedAccounts {
     /// Deserialize from json data
     pub fn from_json(json: &str) -> Result<Self, ParseError> {
         SerializedAccounts::parse(serde_json::from_str(json)?)
+    }
+
+    pub fn from_yaml_reader<R: std::io::Read>(yaml: R) -> Result<Self, ParseError> {
+        SerializedAccounts::parse(serde_yaml::from_reader(yaml)?)
     }
 
     /// Return the existing users
