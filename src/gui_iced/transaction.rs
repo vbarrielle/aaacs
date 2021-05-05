@@ -99,7 +99,7 @@ impl Transaction {
             self.shares.clear();
             self.shares.resize(users.len(), Default::default());
         }
-        let mut shares_col = Column::new();
+        let mut shares_col = Column::new().max_width(100);
         for (uid, share) in self.shares.iter_mut().enumerate() {
             shares_col = shares_col.push(
                 Row::new().spacing(5).push(Text::new(&users[uid])).push(
@@ -112,25 +112,19 @@ impl Transaction {
         Row::new()
             .spacing(10)
             .padding(10)
-            .push(
-                TextInput::new(
-                    &mut self.descr_state,
-                    "Transaction name",
-                    &self.descr,
-                    Message::DescrStrChange,
-                )
-                .padding(20),
-            )
+            .push(TextInput::new(
+                &mut self.descr_state,
+                "Transaction name",
+                &self.descr,
+                Message::DescrStrChange,
+            ))
             .push(user_choice)
-            .push(
-                TextInput::new(
-                    &mut self.amount_state,
-                    "Amount",
-                    &self.amount,
-                    Message::AmountStrChange,
-                )
-                .padding(20),
-            )
+            .push(TextInput::new(
+                &mut self.amount_state,
+                "Amount",
+                &self.amount,
+                Message::AmountStrChange,
+            ))
             .push(shares_col)
             .into()
     }
