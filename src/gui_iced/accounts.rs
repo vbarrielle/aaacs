@@ -44,9 +44,15 @@ pub enum Message {
 }
 
 impl Accounts {
-    #[cfg(target_arch = "wasm32")]
-    pub fn title(&self) -> &str {
-        &self.title
+    pub fn title(&self) -> std::borrow::Cow<str> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            std::borrow::Cow::Borrowed(&self.title)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.path.to_string_lossy()
+        }
     }
 
     /// Construct the GUI from a JSON serialization
@@ -64,6 +70,14 @@ impl Accounts {
             transactions,
             ..Default::default()
         })
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn from_inexistent_yaml_path(yaml_path: PathBuf) -> Self {
+        Accounts {
+            path: yaml_path,
+            ..Default::default()
+        }
     }
 
     #[cfg(not(target_arch = "wasm32"))]

@@ -91,12 +91,21 @@ impl Application for Aaacs {
                             ),
                         }
                     }
-                    Err(_err) => {
-                        // TODO need to fill-in the path and maybe check more
-                        // the error, in some case an I/O error is a fatal
-                        // error (eg permission denied)
-                        (Aaacs::Editing(Default::default()), Command::none())
-                    }
+                    Err(err) => match err.kind() {
+                        std::io::ErrorKind::NotFound => (
+                            Aaacs::Editing(
+                                Accounts::from_inexistent_yaml_path(path),
+                            ),
+                            Command::none(),
+                        ),
+                        _ => (
+                            Aaacs::FatalError(format!(
+                                "I/O error opening {:?}: {:?}",
+                                path, err,
+                            )),
+                            Command::none(),
+                        ),
+                    },
                 }
             } else {
                 (Aaacs::Editing(Default::default()), Command::none())
@@ -105,7 +114,12 @@ impl Application for Aaacs {
     }
 
     fn title(&self) -> String {
-        "aaacs".into()
+        match self {
+            Aaacs::Editing(accounts) => {
+                format!("aaacs: {}", accounts.title())
+            }
+            _ => "aaacs".into(),
+        }
     }
 
     fn update(
