@@ -7,7 +7,7 @@ representing how much he benefited from the transaction. From this
 representation, aaacs will compute which user is a creditor and which is a
 debitor, and by which amount.
 
-For now the tool is CLI only, but expect a GUI in the future.
+For now the tool is mature in CLI only, but a GUI is in development.
 
 ## Example
 
@@ -17,7 +17,7 @@ did not drink any wine, while Shuba drank twice as much as Simon. And Shuba ate
 twice as much as Simon, and Eska three times as much as Simon. These friends
 want to divide the costs fairly. The tartiflette cost 42€, and the wine 15€.
 
-Using aacs, they first modelize their meal with the following `input.yml` file:
+Using aaacs, they first modelize their meal with the following `input.yml` file:
 
 ```yml
 ---
@@ -42,10 +42,10 @@ purchases:
 
 ```
 
-And aacs procudes the following output:
+And aaacs procudes the following output:
 
 ```
-$ cargo run input.yml
+$ cargo run --cli input.yml
 Processing accounts for input.yml:
 Eska has a balance of: 22.91
 Shuba has a balance of: -25.27
@@ -56,9 +56,6 @@ Now our friends know that Shuba ows 2.36€ to Simon, and 22.91 to Eska.
 
 ## Status and future work
 
-Currently works with basic validation of the input yaml file. Different input
-types will be considered in the future, for example tabular input in the form
-of `.tsv`, `.csv` or `.ods` files would be nice.
+Currently the CLI mode is usable if the yaml file is edited by hand.
 
-I also plan to experiment with the various Rust GUI frameworks to build a simple
-GUI.
+The GUI is a work in progress, both as a native GUI and a web-based one.
