@@ -1,19 +1,20 @@
 ---
 users:
-    - Simon
-    - Shuba
-    - Eska
+  - Eska
+  - Shuba
+  - Simon
 purchases:
-    - descr: wine
-      amount: 15
-      who: Simon
-      benef_to_shares:
-          Simon: 1
-          Shuba: 2
-    - descr: tartiflette
-      amount: 42
-      who: Eska
-      benef_to_shares:
-          Simon: 1
-          Shuba: 2
-          Eska: 3
+  - descr: wine
+    who: Simon
+    amount: "15"
+    benef_to_shares:
+      Simon: "1"
+      Eska: "0"
+      Shuba: "2"
+  - descr: tartiflette
+    who: Eska
+    amount: "42"
+    benef_to_shares:
+      Shuba: "2"
+      Eska: "3"
+      Simon: "1"

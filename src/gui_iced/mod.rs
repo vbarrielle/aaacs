@@ -213,7 +213,20 @@ impl Aaacs {
                     },
             } => {
                 if modif.is_command_pressed() {
-                    println!("Should save!");
+                    match self {
+                        Aaacs::Editing(account) => match account.save() {
+                            Err(e) => {
+                                account.set_status(&format!(
+                                    "Could not save: {}",
+                                    e
+                                ));
+                            }
+                            Ok(_) => {
+                                account.set_status(&"Succesful save");
+                            }
+                        },
+                        _ => (),
+                    }
                 }
             }
             _ => (),

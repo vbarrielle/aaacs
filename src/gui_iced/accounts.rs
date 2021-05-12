@@ -30,6 +30,7 @@ pub struct Accounts {
     go_home_btn_state: button::State,
     #[cfg(feature = "debug")]
     latest_message: Option<Message>,
+    status: String,
 }
 
 #[derive(Debug, Clone)]
@@ -97,6 +98,14 @@ impl Accounts {
             transactions,
             ..Default::default()
         })
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn save(&self) -> std::io::Result<()> {
+        use std::io;
+        let file = std::fs::File::create(&self.path)?;
+        serde_yaml::to_writer(file, &self.accounts.as_serializable())
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
     }
 
     pub fn new(title: String) -> Self {
@@ -194,6 +203,11 @@ impl Accounts {
                 self.last_error = res.err();
             }
         }
+    }
+
+    pub fn set_status(&mut self, msg: &str) {
+        self.status.clear();
+        self.status.push_str(msg);
     }
 
     pub fn view(&mut self) -> Element<Message> {
@@ -313,6 +327,11 @@ impl Accounts {
                     Text::new("Could not serialize YAML").color([1.0, 0., 0.]),
                 );
             }
+        }
+        if self.status.len() > 0 {
+            column = column
+                .push(iced::widget::Space::with_height(iced::Length::Fill));
+            column = column.push(Text::new(&self.status));
         }
         column.into()
     }
