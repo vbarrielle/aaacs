@@ -205,7 +205,7 @@ impl Accounts {
         }
     }
 
-    pub fn set_status(&mut self, msg: &str) {
+    fn set_status(&mut self, msg: &str) {
         self.status.clear();
         self.status.push_str(msg);
     }
@@ -334,5 +334,36 @@ impl Accounts {
             column = column.push(Text::new(&self.status));
         }
         column.into()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn handle_kb_event(&mut self, event: iced_native::keyboard::Event) {
+        use iced_native::keyboard::{Event, KeyCode, Modifiers};
+        match event {
+            Event::KeyPressed {
+                key_code: KeyCode::S,
+                modifiers:
+                    modif
+                    @
+                    Modifiers {
+                        control: _,
+                        shift: false,
+                        alt: false,
+                        logo: _,
+                    },
+            } => {
+                if modif.is_command_pressed() {
+                    match self.save() {
+                        Err(e) => {
+                            self.set_status(&format!("Could not save: {}", e));
+                        }
+                        Ok(_) => {
+                            self.set_status(&"Succesful save");
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
     }
 }

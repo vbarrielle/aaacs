@@ -151,7 +151,10 @@ impl Application for Aaacs {
             }
             #[cfg(not(target_arch = "wasm32"))]
             Message::Event(event) => match event {
-                iced_native::Event::Keyboard(e) => self.handle_kb_event(e),
+                iced_native::Event::Keyboard(e) => match self {
+                    Aaacs::Editing(accounts) => accounts.handle_kb_event(e),
+                    _ => (),
+                },
                 _ => (),
             },
         }
@@ -191,45 +194,6 @@ impl Application for Aaacs {
                     .color([1.0, 0., 0.])
                     .into()
             }
-        }
-    }
-}
-
-impl Aaacs {
-    #[cfg(not(target_arch = "wasm32"))]
-    fn handle_kb_event(&mut self, event: iced_native::keyboard::Event) {
-        use iced_native::keyboard::{Event, KeyCode, Modifiers};
-        match event {
-            Event::KeyPressed {
-                key_code: KeyCode::S,
-                modifiers:
-                    modif
-                    @
-                    Modifiers {
-                        control: _,
-                        shift: false,
-                        alt: false,
-                        logo: _,
-                    },
-            } => {
-                if modif.is_command_pressed() {
-                    match self {
-                        Aaacs::Editing(account) => match account.save() {
-                            Err(e) => {
-                                account.set_status(&format!(
-                                    "Could not save: {}",
-                                    e
-                                ));
-                            }
-                            Ok(_) => {
-                                account.set_status(&"Succesful save");
-                            }
-                        },
-                        _ => (),
-                    }
-                }
-            }
-            _ => (),
         }
     }
 }
