@@ -1,6 +1,8 @@
 //! GUI based on the `iced` library.
 
-use iced::{Application, Clipboard, Command, Element, Settings, Text};
+use iced::{
+    Application, Clipboard, Command, Element, Settings, Subscription, Text,
+};
 
 use std::path::PathBuf;
 
@@ -37,6 +39,8 @@ enum Aaacs {
 enum Message {
     HomePage(file_selector::Message),
     Editing(accounts::Message),
+    #[cfg(not(target_arch = "wasm32"))]
+    Event(iced_native::Event),
 }
 
 #[derive(Default)]
@@ -145,6 +149,11 @@ impl Application for Aaacs {
                     }
                 }
             }
+            #[cfg(not(target_arch = "wasm32"))]
+            Message::Event(event) => match event {
+                iced_native::Event::Keyboard(e) => self.handle_kb_event(e),
+                _ => (),
+            },
         }
         #[cfg(target_arch = "wasm32")]
         {
@@ -164,6 +173,11 @@ impl Application for Aaacs {
         Command::none()
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    fn subscription(&self) -> Subscription<Message> {
+        iced_native::subscription::events().map(Message::Event)
+    }
+
     fn view(&mut self) -> Element<Message> {
         match self {
             Aaacs::HomePage(selector) => {
@@ -177,6 +191,32 @@ impl Application for Aaacs {
                     .color([1.0, 0., 0.])
                     .into()
             }
+        }
+    }
+}
+
+impl Aaacs {
+    #[cfg(not(target_arch = "wasm32"))]
+    fn handle_kb_event(&mut self, event: iced_native::keyboard::Event) {
+        use iced_native::keyboard::{Event, KeyCode, Modifiers};
+        match event {
+            Event::KeyPressed {
+                key_code: KeyCode::S,
+                modifiers:
+                    modif
+                    @
+                    Modifiers {
+                        control: _,
+                        shift: false,
+                        alt: false,
+                        logo: _,
+                    },
+            } => {
+                if modif.is_command_pressed() {
+                    println!("Should save!");
+                }
+            }
+            _ => (),
         }
     }
 }

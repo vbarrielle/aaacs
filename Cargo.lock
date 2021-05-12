@@ -7,6 +7,7 @@ dependencies = [
  "data-encoding",
  "dodrio",
  "iced",
+ "iced_native",
  "iced_web",
  "num-rational",
  "serde",
