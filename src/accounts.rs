@@ -1,5 +1,5 @@
 //! Implementations of the internal representation of accounts
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::error::Error;
 
 use num_rational::Rational64;
@@ -84,7 +84,7 @@ struct Purchase {
     descr: String,
     who: String,
     amount: String,
-    benef_to_shares: HashMap<String, String>,
+    benef_to_shares: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
